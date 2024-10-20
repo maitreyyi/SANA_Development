@@ -1,0 +1,5 @@
+router.get('/lookup-job', (req, res) => {
+    res.render('lookup-job');
+});
+
+router.post('/lookup-job', jobController.lookupJob);

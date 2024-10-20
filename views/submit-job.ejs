@@ -1,0 +1,11 @@
+const express = require('express');
+const router = express.Router();
+const jobController = require('../controllers/jobController');
+
+router.get('/submit-job', (req, res) => {
+    res.render('submit-job'); // Render submit job page
+});
+
+router.post('/submit-job', jobController.submitJob); // Handle form submission
+
+module.exports = router;

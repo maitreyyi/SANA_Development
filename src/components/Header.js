@@ -1,20 +1,29 @@
-import React from 'react';
-import {Link} from 'react-router-dom';
+import React from "react";
+import { Link } from "react-router-dom";
 
-function Header(){
-    return (
-        <header className="bg-blue-500 text-white py-4 shadow-md">
-            <div className="container mx-auto flex justify-between items-center py-4">
-                <Link to = "/" className="text-2xl font-bold">SANA Web Interface</Link>
-                <nav className="flex space-x-4">
-                    <Link to="/submit-job" className="hover:text-blue-300">Submit Job</Link>
-                    <Link to="/lookup-job" className="hover:text-blue-300">Lookup Previous Job</Link>
-                    <Link to="/contact" className="hover:text-blue-300">Contact Us</Link>
-                </nav>
-            </div>
-          
-        </header>
-    );
+function Header() {
+  return (
+    <header className="fixed top-0 w-full bg-primary text-white p-4 shadow-xl flex justify-between items-center">
+      <Link
+        to="/"
+        className="text-xl flex items-center gap-2 text-opacity-0 hover:text-hover-link transition"
+      >
+        <img src="/sana-logo-white.png" alt="sana logo" className="size-10" />
+        SANA Web Interface
+      </Link>
+      <nav className="flex space-x-4">
+        <Link to="/submit-job" className="hover:text-hover-link transition">
+          Submit Job
+        </Link>
+        <Link to="/lookup-job" className="hover:text-hover-link transition">
+          Lookup Previous Job
+        </Link>
+        <Link to="/contact" className="hover:text-hover-link transition">
+          Contact Us
+        </Link>
+      </nav>
+    </header>
+  );
 }
 
 export default Header;

@@ -28,3 +28,9 @@ input:not([type]), input[type="text"], input[type="password"], input[type="date"
     -o-transition: border-color 0.15s linear, background 0.15s linear;
     transition: border-color 0.15s linear, background 0.15s linear; 
 }
+.debug {
+    outline: 1px solid red;
+}
+*{
+    box-sizing: border-box;
+}

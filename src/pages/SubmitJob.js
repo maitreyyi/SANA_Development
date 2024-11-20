@@ -5,9 +5,8 @@ import NetworkSelection from "../components/NetworkSelection.js";
 import OptionsHelp from "../components/OptionsHelp.js";
 import ProcessingStep from "../components/ProcessingStep.js";
 import StepNavigation from "../components/StepNavigation.js";
+import Button from "../components/Button.js";
 import PageFlipper from "../components/PageFlipper.js";
-
-import {Link} from 'react-router-dom';
 
 const SubmitJob = () => {
     const [jsEnabled, setJsEnabled ] = useState(false);
@@ -96,7 +95,7 @@ const SubmitJob = () => {
             <div id="query-page-content">
               <div className="page-content-wrapper">
                 <header>
-                  <h1 className='text-4xl font-bold'>Submit New Job</h1>
+                  <h1 className='text-4xl font-bold mt-4'>Submit New Job</h1>
                 </header>
                 <hr />
                 <StepNavigation/>
@@ -105,13 +104,18 @@ const SubmitJob = () => {
                     id="submit-new-job-form"
                     method="POST"
                     encType="multipart/form-data"
-                    action="/process/index.php"
+                    action="."
                     onSubmit={handleFormSubmit}
                   >
-                    {activeStep === 'select-networks' && (<NetworkSelection 
-                      handleFileInputChange={handleFileInputChange} 
-                      handleNext={handleNext} 
-                    /> )}            
+                    {activeStep === 'select-networks' && (
+                      <div>
+                        <NetworkSelection 
+                          handleFileInputChange={handleFileInputChange} 
+                          handleNext={handleNext} 
+                        />
+                        <Button className="align-right">Next</Button>
+                      </div>
+                    )}            
                     {activeStep === 'options' && (<OptionsHelp handleBack={handleBack} handleNext={handleNext}/>)}
                     {activeStep === 'confirm' && (<ConfirmationNote handleBack={handleBack}  handleNext = {handleNext}/>)}
                     {activeStep === 'processing' && (<ProcessingStep/>)}

@@ -23,6 +23,9 @@ const Home = () => {
         <Link to="/lookup-job">
           <Button className="w-64">Look up Previous Job</Button>
         </Link>
+        <Link to="/contact">
+          <Button className="w-64">Contact Us</Button>
+        </Link>
       </div>
       <hr class="border w-full border-black transform scale-x-105" />
       <p>

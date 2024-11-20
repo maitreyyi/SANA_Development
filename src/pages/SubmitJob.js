@@ -27,6 +27,7 @@ const SubmitJob = () => {
             setActiveStep('processing');
           }
     };
+    
     const handleBack= () => {
         if (activeStep === 'options') {
             setActiveStep('select-networks');
@@ -92,13 +93,13 @@ const SubmitJob = () => {
         {!jsEnabled && <JavaScriptWarning />}
         {jsEnabled && (
           <div id="js-enabled">
-            <div id="query-page-content" className="page-content">
+            <div id="query-page-content">
               <div className="page-content-wrapper">
                 <header>
-                  <h1>Submit New Job</h1>
+                  <h1 className='text-4xl font-bold'>Submit New Job</h1>
                 </header>
                 <hr />
-                <StepNavigation />
+                <StepNavigation/>
                 <div id="content-container">
                   <form
                     id="submit-new-job-form"

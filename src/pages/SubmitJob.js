@@ -6,6 +6,8 @@ import OptionsHelp from "../components/OptionsHelp.js";
 import ProcessingStep from "../components/ProcessingStep.js";
 import StepNavigation from "../components/StepNavigation.js";
 import PageFlipper from "../components/PageFlipper.js";
+import Button from "../components/Button.js";
+import SelectVersion from '../components/SelectVersion.js';
 
 const SubmitJob = () => {
     const [jsEnabled, setJsEnabled ] = useState(false);
@@ -105,14 +107,31 @@ const SubmitJob = () => {
                       <div>
                         <NetworkSelection 
                           handleFileInputChange={handleFileInputChange} 
-                          handleNext={handleNext} 
+                          validateFile = {validateFile}
                         />
                         <PageFlipper handleNext={handleNext}/>
                       </div>
                     )}            
-                    {activeStep === 'options' && (<OptionsHelp handleBack={handleBack} handleNext={handleNext}/>)}
-                    {activeStep === 'confirm' && (<ConfirmationNote handleBack={handleBack}  handleNext = {handleNext}/>)}
-                    {activeStep === 'processing' && (<ProcessingStep/>)}
+                    {activeStep === 'options' && (
+                      <div>
+                        <OptionsHelp />
+                        <PageFlipper handleNext={handleNext} handlePrevious={handleBack}/>
+                      </div>
+                    )}
+                    {activeStep === 'confirm' && (
+                      <div>
+                        <ConfirmationNote />
+                        <PageFlipper handleNext={handleNext} handlePrevious={handleBack}/>
+                      </div>
+                      
+                    )}
+                    {activeStep === 'processing' && (
+                      <div>
+                        <ProcessingStep />
+                        <PageFlipper handlePrevious={handleBack}/>
+                        <Button type="submit" />
+                      </div>  
+                    )}
                   </form>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import React from "react";
 
-const ConfirmationNote = ({visible, handleBack }) => {
+const ConfirmationNote = ({visible}) => {
   if(!visible){
     return null;
   }
@@ -14,14 +14,6 @@ const ConfirmationNote = ({visible, handleBack }) => {
         <li>The networks will be aligned with the specified options.</li>
         <li>Faded values are default settings. To make changes, click the back button.</li>
       </ul>
-    </div>
-    <div className="page-flipper">
-      <button type="button" onClick={handleBack} className="prev-page button radius">
-        <span>&larr; Back</span>
-      </button>
-      <button type="submit" className="next-page button radius">
-        <span>Submit &rarr;</span>
-      </button>
     </div>
   </div>);
 };

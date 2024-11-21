@@ -1,6 +1,6 @@
 import React from "react";
 
-const NetworkSelection = ({handleFileInputChange, handleNext}) => {
+const NetworkSelection = ({handleFileInputChange, validateFile}) => {
   return(
   <div class="content select-networks active visited">
     <div id="network-selection-prompt" className = "mt-4">

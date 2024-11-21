@@ -15,19 +15,7 @@ const Home = () => {
         width="800px"
         className="mx-auto"
       />
-
-      <div className="flex justify-center space-x-4">
-        <Link to="/submit-job">
-          <Button className="w-64">Submit New Job</Button>
-        </Link>
-        <Link to="/lookup-job">
-          <Button className="w-64">Look up Previous Job</Button>
-        </Link>
-        <Link to="/contact">
-          <Button className="w-64">Contact Us</Button>
-        </Link>
-      </div>
-      <hr class="border w-full border-black transform scale-x-105" />
+      
       <p>
         SANA stands for Simulated Annealing Network Aligner. It takes as input
         two networks and aligns them (schematically).{" "}

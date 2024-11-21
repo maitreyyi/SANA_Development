@@ -65,6 +65,7 @@ const SubmitJob = () => {
         event.preventDefault();
         const data = new FormData(event.target);
         setFormData(data);
+
         try {
           const response = await fetch('', {
             method: 'POST',
@@ -99,13 +100,7 @@ const SubmitJob = () => {
                 <hr />
                 <StepNavigation/>
                 <div id="content-container">
-                  <form
-                    id="submit-new-job-form"
-                    method="POST"
-                    encType="multipart/form-data"
-                    action="."
-                    onSubmit={handleFormSubmit}
-                  >
+                  <form id="submit-new-job-form" method="POST" encType="multipart/form-data" action=".">
                     {activeStep === 'select-networks' && (
                       <div>
                         <NetworkSelection 

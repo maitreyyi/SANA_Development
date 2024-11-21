@@ -45,7 +45,10 @@ const SubmitJob = () => {
         if (file && validateFile(file, fileType)) {
             if (fileType === "Network-file1") setFile1(file);
             else if (fileType === "Network-file2") setFile2(file);
-        } 
+            setShowAlert(false);
+        } else {
+          setShowAlert(true);
+        }
     };
 
     const validateFile = (file, fileType) => {
@@ -99,7 +102,7 @@ const SubmitJob = () => {
           <div id="js-enabled">
             <div id="query-page-content">
               <div className="page-content-wrapper">
-               {showAlert && <Alert message = {fileError} onClose = {() => setShowAlert=(false)} />}
+               {showAlert && <Alert message = {fileError} onClose = {() => setShowAlert(false)} />}
                 <header>
                   <h1 className='text-4xl font-bold mt-4'>Submit New Job</h1>
                 </header>
@@ -112,7 +115,7 @@ const SubmitJob = () => {
                         <NetworkSelection 
                           handleFileInputChange={handleFileInputChange} 
                         />
-                        <PageFlipper handleNext={handleNext}/>
+                        <PageFlipper handleNext={handleNext} disabled={showAlert}/>
                       </div>
                     )}            
                     {activeStep === 'options' && (

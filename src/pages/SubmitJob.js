@@ -5,7 +5,6 @@ import NetworkSelection from "../components/NetworkSelection.js";
 import OptionsHelp from "../components/OptionsHelp.js";
 import ProcessingStep from "../components/ProcessingStep.js";
 import StepNavigation from "../components/StepNavigation.js";
-import Button from "../components/Button.js";
 import PageFlipper from "../components/PageFlipper.js";
 
 const SubmitJob = () => {
@@ -113,7 +112,7 @@ const SubmitJob = () => {
                           handleFileInputChange={handleFileInputChange} 
                           handleNext={handleNext} 
                         />
-                        <Button className="align-right">Next</Button>
+                        <PageFlipper handleNext={handleNext}/>
                       </div>
                     )}            
                     {activeStep === 'options' && (<OptionsHelp handleBack={handleBack} handleNext={handleNext}/>)}

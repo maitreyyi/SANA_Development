@@ -1,13 +1,15 @@
 import React from "react";
+import Button from "../components/Button.js";
 
 const PageFlipper = ({ handleNext, handlePrevious}) => (
   <div className="page-flipper">
-    <button type="button" onClick={handlePrevious} className="prev-page button radius" disabled={!handlePrevious}>
-      <span>Previous &rarr;</span>
-    </button>
-    <button type="button" onClick={handleNext} className="next-page button radius">
+    {handlePrevious && <Button onClick={handlePrevious}>
+      <span>Previous &larr;</span>
+    </Button>}
+
+    {handleNext && <Button onClick={handleNext} className="next-page button radius">
       <span>Next &rarr;</span>
-    </button>
+    </Button>}
   </div>
 );
 

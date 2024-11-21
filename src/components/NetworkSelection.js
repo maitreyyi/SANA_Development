@@ -1,6 +1,6 @@
 import React from "react";
 
-const NetworkSelection = ({handleFileInputChange, validateFile}) => {
+const NetworkSelection = ({handleFileInputChange}) => {
   return(
   <div class="content select-networks active visited">
     <div id="network-selection-prompt" className = "mt-4">
@@ -27,7 +27,7 @@ const NetworkSelection = ({handleFileInputChange, validateFile}) => {
 					<span className="text-gray-800">If you aren't aligning a network to itself, select the <strong><em>smaller</em></strong> network (in terms of node count).</span>
 				</div>
 				<div className="md:w-1/2">
-          <input type="file" id="network-file-1-input" className="file-input border rounded-md shadow-sm p-2 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600" name="network-files[]" ></input>
+          <input type="file" id="network-file-1-input" className="file-input border rounded-md shadow-sm p-2 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600" name="network-files[]" onChange = {(e) => handleFileInputChange(e, "network-file1")} ></input>
         </div>
 			</div>
 			<div className="flex flex-col md:flex-row items-center">
@@ -35,7 +35,7 @@ const NetworkSelection = ({handleFileInputChange, validateFile}) => {
 				  <span className="text-gray-800">If you aren't aligning a network to itself, select the <strong><em>larger</em></strong> network (in terms of node count).</span>
 				</div>
 				<div className="md:w-1/2">
-					<input type="file" id="network-file-2-input" className="file-input border rounded-md shadow-sm p-2 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600" name="network-files[]"></input>
+					<input type="file" id="network-file-2-input" className="file-input border rounded-md shadow-sm p-2 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600" name="network-files[]" onChange = {(e) => handleFileInputChange(e, "network-file2")}></input>
 				</div>
 			</div>
 		</div>

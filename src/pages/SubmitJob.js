@@ -8,6 +8,7 @@ import StepNavigation from "../components/StepNavigation.js";
 import PageFlipper from "../components/PageFlipper.js";
 import Button from "../components/Button.js";
 import SelectVersion from '../components/SelectVersion.js';
+import Alert from "../components/Alert.js";
 
 const SubmitJob = () => {
     const [jsEnabled, setJsEnabled ] = useState(false);
@@ -16,6 +17,8 @@ const SubmitJob = () => {
     const [file2, setFile2] = useState(null);
     const [fileError, setFileError] = useState(null);
     const [formData, setFormData] = useState(new FormData());
+    const [showAlert, setShowAlert] = useState(true);
+
     const validExts = ["gw", "el"];
 
     const handleNext = () =>{
@@ -40,9 +43,9 @@ const SubmitJob = () => {
     const handleFileInputChange = (event, fileType) => {
         const file = event.target.files[0];
         if (file && validateFile(file, fileType)) {
-            if (fileType === "file1") setFile1(file);
-            else if (fileType === "file2") setFile2(file);
-        }
+            if (fileType === "Network-file1") setFile1(file);
+            else if (fileType === "Network-file2") setFile2(file);
+        } 
     };
 
     const validateFile = (file, fileType) => {
@@ -96,6 +99,7 @@ const SubmitJob = () => {
           <div id="js-enabled">
             <div id="query-page-content">
               <div className="page-content-wrapper">
+               {showAlert && <Alert message = {fileError} onClose = {() => setShowAlert=(false)} />}
                 <header>
                   <h1 className='text-4xl font-bold mt-4'>Submit New Job</h1>
                 </header>
@@ -107,7 +111,6 @@ const SubmitJob = () => {
                       <div>
                         <NetworkSelection 
                           handleFileInputChange={handleFileInputChange} 
-                          validateFile = {validateFile}
                         />
                         <PageFlipper handleNext={handleNext}/>
                       </div>
@@ -129,7 +132,7 @@ const SubmitJob = () => {
                       <div>
                         <ProcessingStep />
                         <PageFlipper handlePrevious={handleBack}/>
-                        <Button type="submit" />
+                        <Button type="submit" onClick={handleFormSubmit}/>
                       </div>  
                     )}
                   </form>

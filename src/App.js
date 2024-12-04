@@ -8,10 +8,19 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 
 function App() {
+  if (
+    process.env.NODE_ENV === "production" &&
+    !process.env.REACT_APP_BASENAME
+  ) {
+    console.warn(
+      "Missing production environment variable REACT_APP_BASENAME. Defaulting it to '/'."
+    );
+  }
+
   return (
-    <Router>
+    <Router basename={process.env.REACT_APP_BASENAME ?? "/"}>
       <div className="min-h-screen flex flex-col items-center justify-center *:w-full">
-      <Header />
+        <Header />
         <main className="w-full max-w-[900px] flex-1 flex flex-col *:flex-1 *:flex ">
           <Routes>
             <Route path="/" element={<Home />} />
@@ -20,7 +29,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
           </Routes>
         </main>
-      <Footer />
+        <Footer />
       </div>
     </Router>
   );

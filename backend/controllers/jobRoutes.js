@@ -19,28 +19,31 @@ router.get('/job', jobController.validateQueryParams, (req, res) => {
   }
 
   const infoFilePath = path.join(jobDir, 'info.json');
-  const errorFilePath = path.join(jobDir, 'error.log');
   const runLogFilePath = path.join(jobDir, 'run.log');
 
-  const isProcessed = fs.existsSync(infoFilePath);
-  const hasError = fs.existsSync(errorFilePath);
-
   let jobData = null;
+  let runLogContent = null;
 
-  // Parse info.json if it exists
-  if (isProcessed) {
+  if (fs.existsSync(infoFilePath)) { // check if info.json exists
     try {
-        // code for parsing info.json file data here
+        jobData = JSON.parse(fs.readFileSync(infoFilePath, 'utf-8')); // parse info.json as JSON
     } catch (err) {
       return res.status(500).json({ error: 'Failed to parse info.json.' });
     }
   }
 
+  if (fs.existsSync(runLogFilePath)) { // check if run.log exists
+    try {
+        runLogContent = fs.readFileSync(runLogFilePath, 'utf-8'); // parse run.log as plain text
+    } catch (err) {
+        return res.status(500).json({ error: 'Failed to parse run.log' });
+    }
+  }
+
   const response = {
-    jobId,
-    isProcessed,
-    hasError,
-    jobData
+    id: jobID,
+    data: jobData,
+    runLog: runLogContent
   };
 
   res.json(response);

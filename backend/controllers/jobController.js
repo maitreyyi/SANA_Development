@@ -20,8 +20,19 @@ const submitJob = (req, res) => {
   res.json({ message: 'Job submitted successfully' });
 };
 
+// helper function to validate query parameters for job lookup
+function validateQueryParams(req, res, next) {
+  const { id } = req.query;
+  if (!id) {
+    return res.status(400).json({ error: 'Job ID is required as a query parameter.' });
+  }
+  next();
+}
+
+
 // Export controller functions
 module.exports = {
   upload,
   submitJob,
+  validateQueryParams
 };

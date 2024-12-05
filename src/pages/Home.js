@@ -33,7 +33,7 @@ const Home = () => {
         statement.
       </p>
 
-      <hr class="border w-full border-black transform scale-x-105" />
+      <hr className="border w-full border-black transform scale-x-105" />
 
       <div className="flex flex-col gap-4">
         <p>
@@ -77,7 +77,7 @@ const Home = () => {
         </p>
       </div>
 
-      <hr class="border w-full border-black transform scale-x-105" />
+      <hr className="border w-full border-black transform scale-x-105" />
 
       <img
         width="400px"

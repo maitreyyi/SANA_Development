@@ -22,7 +22,7 @@ function Footer() {
         SANA software GitHub
       </Link>
 
-      <hr class="border-t border-gray-300 my-4"></hr>
+      <hr className="border-t border-gray-300 my-4"></hr>
 
       <h4 className="font-bold text-lg">SANA Web Interface</h4>
       <p className="py-2">Current Developer: Maitreyi Sinha</p>
@@ -30,7 +30,7 @@ function Footer() {
         SANA Web Interface GitHub (TO BE ADDED)
       </Link>
 
-      <hr class="border-t border-gray-300 my-4"></hr>
+      <hr className="border-t border-gray-300 my-4"></hr>
 
       <h4 className="font-bold text-lg">Questions and Contact</h4>
       <p className="py-2">

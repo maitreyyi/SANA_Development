@@ -2,7 +2,7 @@ import React from "react";
 
 const NetworkSelection = ({handleFileInputChange}) => {
   return(
-  <div class="content select-networks active visited">
+  <div className="content select-networks active visited">
     <div id="network-selection-prompt" className = "mt-4">
       <p className="text-gray-800">Please select two networks to align. Allowed file types are:</p>
       <ul className="list-disc list-inside ml-4 text-gray-700">

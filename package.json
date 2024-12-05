@@ -6,6 +6,13 @@
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "crypto": "^1.0.1",
+    "express": "^4.21.1",
+    "fs": "^0.0.1-security",
+    "install": "^0.13.0",
+    "multer": "^1.4.5-lts.1",
+    "npm": "^10.9.0",
+    "path": "^0.12.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.27.0",
@@ -16,7 +23,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "backend-dev": "npx nodemon backend/server.js"
   },
   "eslintConfig": {
     "extends": [
@@ -38,6 +46,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
+    "nodemon": "^3.1.7",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14"
   }

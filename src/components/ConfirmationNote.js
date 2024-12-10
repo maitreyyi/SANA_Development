@@ -1,21 +1,40 @@
-import React from "react";
+import AlignmentOptions from "./AlignmentOptions";
+import PropTypes from "prop-types";
+import Note from "./Note";
 
-const ConfirmationNote = ({visible}) => {
-  if(!visible){
-    return null;
-  }
+const ConfirmationNote = ({ handleOptionChange, options }) => {
+    return (
+        <div>
+            <Note>
+                <p>Please note the following:</p>
+                <ul className="list-disc pl-8">
+                    <li>
+                        The networks will be aligned with the following options,
+                        which cannot be changed after submission. To proceed,
+                        click the submit button.
+                    </li>
+                    <li>
+                        Faded values are default settings. To make changes,
+                        click the back button.
+                    </li>
+                </ul>
+            </Note>
+            <AlignmentOptions
+                handleOptionChange={handleOptionChange}
+                options={options}
+                fixed
+            />
+        </div>
+    );
+};
 
-  return (
-  <div className="content confirm">
-    <div className="panel callout">
-      <h2>NOTE</h2>
-      <span>Please note the following:</span>
-      <ul className="circle">
-        <li>The networks will be aligned with the specified options.</li>
-        <li>Faded values are default settings. To make changes, click the back button.</li>
-      </ul>
-    </div>
-  </div>);
+ConfirmationNote.propTypes = {
+    handleOptionChange: PropTypes.func,
+    options: PropTypes.shape({
+        runtimeInMinutes: PropTypes.number.isRequired,
+        s3Weight: PropTypes.number.isRequired,
+        ecWeight: PropTypes.number.isRequired,
+    }).isRequired,
 };
 
 export default ConfirmationNote;

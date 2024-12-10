@@ -21,7 +21,7 @@ function Button({ type="button", onClick, children, className, disabled = false 
       type={type}
       onClick = {onClick}
       disabled = {disabled}
-      className={`inline-block bg-primary hover:bg-secondary px-8 py-4 cursor-pointer rounded-md text-center text-white text-lg transition duration-300 ${disabled ? "opacity-50 cursor-not-allowed" : ""} $(className}`}
+      className={`inline-block bg-primary hover:bg-secondary px-8 py-4 cursor-pointer rounded-md text-center text-white text-lg transition duration-300 ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`}
     >
       {children}
     </button>

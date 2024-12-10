@@ -65,7 +65,7 @@ const Contact = () => {
                     className={`${headingTwoClasses}`}
                 >Contact Us</h2>
                 <div>
-                    <label for="name" className={`${labelClasses}`}>
+                    <label htmlFor="name" className={`${labelClasses}`}>
                         {" "}
                         Name:
                     </label>

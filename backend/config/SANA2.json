@@ -1,0 +1,15 @@
+{
+	"standard": 
+	[
+		["s3", "text", 0, "S3 weight", "The weight of the Symmetric Substructer Score in the objective function."],
+		["ec", "text", 1, "EC weight", "The weight of the Edge Coverage in the objective function."],
+		["ics","double",0,"Weight of ICS","The weight of the Induced Conserved Structure in the objective function."],
+		["tolerance","double", 0.1,"Target tolerance for optimal objective","Attempt to optimize the final value of the objective to within this tolerance of the optimal solution. Each increase in value in menu will make the runtime approximately 5-10 times longer."]
+	],
+	"advanced": 
+	[
+		["esim","dbl_vec",0,"External Similarity Weights","An integer followed by that many weights, specifying objective function weights for external similarity files (must be the same integer as given to -simFile and -simFormat)."],
+		["simFile","str_vec",0,"External Similarity Filenames","An integer (same integer as given to -esim and -simFormat) followed by that many filesnames, specifying external three-column (node from G1, node from G2, similarity) similarities. The similarities in the 3rd column will be normalized to be in [0,1]. These simFiles will be given weight according to the -esim argument"]
+		
+	]
+}

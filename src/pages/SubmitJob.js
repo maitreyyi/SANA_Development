@@ -6,7 +6,6 @@ import OptionsHelp from "../components/OptionsHelp.js";
 import ProcessingStep from "../components/ProcessingStep.js";
 import StepNavigation from "../components/StepNavigation.js";
 import PageFlipper from "../components/PageFlipper.js";
-import Button from "../components/Button.js";
 import SelectVersion from '../components/SelectVersion.js';
 import Alert from "../components/Alert.js";
 import api from '../api/api.js';
@@ -14,6 +13,7 @@ import { useNavigate } from "react-router";
 
 
 export const Steps = {
+  SELECT_VERSION: 'select-version',
   SELECT_NETWORKS: 'select-networks',
   OPTIONS: 'options',
   CONFIRM: 'confirm',
@@ -21,6 +21,7 @@ export const Steps = {
 };
 
 export const stepNames = {
+  [Steps.SELECT_VERSION]: 'Select Version',
   [Steps.SELECT_NETWORKS]: 'Select Networks',
   [Steps.OPTIONS]: 'Options',
   [Steps.CONFIRM]: 'Confirm',
@@ -29,17 +30,19 @@ export const stepNames = {
 
 const SubmitJob = () => {
     const [jsEnabled, setJsEnabled ] = useState(false);
-    const [activeStep, setActiveStep] = useState(Steps.SELECT_NETWORKS);
+    const [activeStep, setActiveStep] = useState(Steps.SELECT_VERSION);
     const [file1, setFile1] = useState(null);
     const [file2, setFile2] = useState(null);
     const [fileError, setFileError] = useState(null);
-    const [formData, setFormData] = useState(new FormData());
     const [showAlert, setShowAlert] = useState(false);
+    // default: SANA1 and SANA1.1
     const [options, setOptions] = useState({
       runtimeInMinutes: 3,
       s3Weight: 0,
-      ecWeight: 0
+      ecWeight: 1
     });
+
+    const [sanaVersion, setSanaVersion] = useState('SANA1');
     const validExts = ["gw", "el"];
     const navigate = useNavigate();
 
@@ -56,7 +59,6 @@ const SubmitJob = () => {
       setFile1(null);
       setFile2(null);
       setFileError(null);
-      setFormData(new FormData());
       setShowAlert(false);
       setOptions({
           runtimeInMinutes: 3,
@@ -66,7 +68,10 @@ const SubmitJob = () => {
   };
 
     const handleNext = () =>{
-        if (activeStep === Steps.SELECT_NETWORKS) {
+        if(activeStep === Steps.SELECT_VERSION){
+          setActiveStep(Steps.SELECT_NETWORKS);
+        }
+        else if (activeStep === Steps.SELECT_NETWORKS) {
             if(file1 && file2){
               console.log(file1, file2);//TESTING
               setActiveStep(Steps.OPTIONS);
@@ -85,9 +90,12 @@ const SubmitJob = () => {
     };
     
     const handleBack= () => {
-        if (activeStep === Steps.OPTIONS) {
+        if(activeStep === Steps.SELECT_NETWORKS){
+          setActiveStep(Steps.SELECT_VERSION);
+          resetForm();
+        }
+        else if (activeStep === Steps.OPTIONS) {
             setActiveStep(Steps.SELECT_NETWORKS);
-            resetForm();
         } else if (activeStep === Steps.CONFIRM) {
             setActiveStep(Steps.OPTIONS);
         }
@@ -104,6 +112,10 @@ const SubmitJob = () => {
           setShowAlert(true);
         }
     };
+
+    const handleVersionChange = (e) => {
+      setSanaVersion(e.target.value);
+  };
 
     const validateFile = (file, fileType) => {
         const extension = file.name.split('.').pop().toLowerCase();
@@ -123,30 +135,7 @@ const SubmitJob = () => {
         return true;
     };
 
-    // const handleFormSubmit = async (event) => {
-    //     event.preventDefault();
-    //     const data = new FormData(event.target);
-    //     setFormData(data);
-
-    //     try {
-    //       const response = await fetch('', {
-    //         method: 'POST',
-    //         body: formData,
-    //       });
-    //       const result = await response.json();
-    //       if (result.success) {
-    //         window.location = result.data.url;
-    //       } else {
-    //         alert(result.status);
-    //       }
-    //     } catch (error) {
-    //       console.error(error);
-    //       alert('Error processing the form.');
-    //     }
-    // };
-
-    const handleSubmit = async (e) => {
-      e.preventDefault();
+    const handleSubmit = async () => {
       const { runtimeInMinutes, s3Weight, ecWeight } = options;
       const formData = new FormData();
       formData.append('files', file1);
@@ -156,13 +145,15 @@ const SubmitJob = () => {
         s3: s3Weight,
         ec: ecWeight
       }));
+      // APPEND VERSION HERE
+      formData.append('version', sanaVersion);
       try {
         const json = await api.upload(formData);
-        console.log(json);
-        // redirect to `/process/jobId`
-        const jobId = json.jobId;
-        navigate(`/process/${jobId}`);
-        // or try getting link from backend --- naww
+        console.log(json); //TESTING
+        if(json.redirect){
+          navigate(json.redirect); 
+
+        }
       } catch (error) {
         console.error('Submit Error:', error);
       }
@@ -190,17 +181,24 @@ const SubmitJob = () => {
                 <div id="content-container">
                   <form id="submit-new-job-form" method="POST" encType="multipart/form-data" action=".">
                     <div className='mb-4'>
+                    {activeStep === Steps.SELECT_VERSION && (
+                        <>
+                          <SelectVersion sanaVersion={sanaVersion} handleVersionChange={handleVersionChange} />
+                          <PageFlipper handleNext={handleNext} disabled={showAlert}/>
+                        </>
+                      )}            
                       {activeStep === Steps.SELECT_NETWORKS && (
                         <>
                           <NetworkSelection 
                             handleFileInputChange={handleFileInputChange} 
+                            sanaVersion={sanaVersion}
                           />
-                          <PageFlipper handleNext={handleNext} disabled={showAlert}/>
+                          <PageFlipper handleNext={handleNext} handlePrevious={handleBack}/>
                         </>
                       )}            
                       {activeStep === Steps.OPTIONS && (
                         <>
-                          <OptionsHelp handleOptionChange={handleOptionChange} options={options}/>
+                          <OptionsHelp handleOptionChange={handleOptionChange} options={options} />
                           <PageFlipper handleNext={handleNext} handlePrevious={handleBack}/>
                         </>
                       )}
@@ -214,9 +212,8 @@ const SubmitJob = () => {
                       {activeStep === Steps.PROCESSING && (
                         <>
                           <ProcessingStep />
-                          <PageFlipper handlePrevious={handleBack}/>
+                          {/* <PageFlipper handlePrevious={handleBack}/> */}
                           {/* <Button type="submit" onClick={(handleFormSubmit)}/> */}
-                          <Button type="submit"/>
                         </>  
                       )}
                     </div>

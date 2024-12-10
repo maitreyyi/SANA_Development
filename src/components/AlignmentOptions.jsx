@@ -13,7 +13,7 @@ const AlignmentOptions = ({
 
     const handleRuntimeChange = (e) => {
         const { value } = e.target;
-        const valueCheck = Math.max(1, Math.min(60, value));
+        const valueCheck = Math.max(1, Math.min(20, value));
         setRuntimeInMinutes(valueCheck);
     };
 
@@ -34,7 +34,7 @@ const AlignmentOptions = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 m-8">
                     <div
                         className="flex items-center justify-between space-x-2"
-                        title="The number of minutes to run SANA. Must be an integer between 1 and 60, inclusive."
+                        title="The number of minutes to run SANA. Must be an integer between 1 and 20, inclusive."
                     >
                         <label htmlFor="runtimeInMinutes">
                             Runtime in minutes

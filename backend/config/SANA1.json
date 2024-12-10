@@ -10,14 +10,14 @@
         [
             "s3",
             "text",
-            1,
+            0,
             "S3 weight",
             "The weight of the Symmetric Substructer Score in the objective function."
         ],
         [
             "ec",
             "text",
-            0,
+            1,
             "EC weight",
             "The weight of the Edge Coverage in the objective function."
         ]

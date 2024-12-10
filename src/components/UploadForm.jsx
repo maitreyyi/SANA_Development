@@ -30,7 +30,7 @@ function UploadForm() {
         formData.append("network-files", networkFiles[1]);
 
         try {
-            await api.upload(formData);
+            const response = await api.upload(formData);
             console.log(response.data);
             // Handle success or error based on response
         } catch (error) {
@@ -45,7 +45,7 @@ function UploadForm() {
                 type="number"
                 name="t"
                 onChange={handleOptionsChange}
-                placeholder="Running time (1-60)"
+                placeholder="Running time (1-20)"
             />
             {/* ...other options inputs */}
             <input

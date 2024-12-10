@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const upload = require("../middlewares/upload");
+const HttpError = require("../middlewares/HttpError");
 
 const router = express.Router();
 
@@ -35,9 +36,20 @@ router.post("/upload", upload.array("network-files", 2), (req, res) => {
     }
 
     // Read default options from config.json
-    const defaultOptionsInfo = JSON.parse(
-        fs.readFileSync(path.join(__dirname, "config.json"), "utf8")
-    );
+    // const defaultOptionsInfo = JSON.parse(
+    //     fs.readFileSync(path.join(__dirname,'../config', "SANA1.json"), "utf8")
+    // );
+
+    const getDefaultOptionsInfo = (sanaVersion) => {
+        const validVersions = new Set(["SANA1", "SANA1_1", "SANA2"]);
+        if (validVersions.has(sanaVersion)) {
+            return fs.readFileSync(path.join(__dirname, '../config', `${sanaVersion}.json`), "utf8");
+        } else {
+            throw new HttpError("Invalid sana version specified in request");
+        }
+    };
+    const sanaVersion = req.body.version;
+    const defaultOptionsInfo = getDefaultOptionsInfo(sanaVersion);
     const defaultOptionsInfoArray = [
         ...defaultOptionsInfo.standard,
         ...defaultOptionsInfo.advanced,

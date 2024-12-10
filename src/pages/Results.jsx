@@ -19,3 +19,21 @@
 // window.location = data.redirect
 
 // useeffect . []
+import { useParams } from "react-router-dom";
+import Output from "../components/Output";
+import Fallback from "./Fallback";
+
+const Results = () => {
+    const { id } = useParams();
+
+    if(!id){
+        return <Fallback isResults/>;
+    }
+
+
+    return (
+        <Output jobId={id} isFinished={true} />
+    );
+};
+
+export default Results;

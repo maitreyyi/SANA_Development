@@ -1,4 +1,4 @@
-import React from "react";
+import Note from "./Note";
 
 const ProcessingStep = () => {
   
@@ -6,10 +6,10 @@ const ProcessingStep = () => {
     <div id="processing-animation-container">
       <span>Preprocessing Networks...</span>
     </div>
-    <div className="panel callout">
-      <h2>NOTE</h2>
-      <span>If this page doesn’t redirect, try again in a different browser.</span>
-    </div>
+    <Note>
+      <div>If this page doesn't redirect, try again in a different browser.</div>
+
+    </Note>
   </div>);
 };
 

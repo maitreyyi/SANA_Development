@@ -1,16 +1,27 @@
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
+const API_URL =
+    process.env.NODE_ENV === "development"
+        ? process.env.REACT_APP_API_URL
+        : window.location.origin;
 
-const apiRequest = async (endpoint, options = {}) => {
+/**
+ * @typedef {import('../../backend/middlewares/ErrorHandler').ErrorHandler} ErrorHandler
+ */
+const apiRequest = async (endpoint, options = {}, hasMultipart = false) => {
+    const headers = {
+        ...options.headers,
+    };
+    if (!hasMultipart) {
+        headers["Content-Type"] = "application/json";
+    }
     try {
-        const response = await fetch(`${API_URL}${endpoint}`, {
-            headers: {
-                "Content-Type": "application/json",
-                ...options.headers,
-            },
+        const response = await fetch(`${API_URL}/api${endpoint}`, {
+            headers,
             ...options,
         });
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            console.error(`HTTP error! status: ${response.status}`);
+            return await response.json();
+            // throw new Error(`HTTP error! status: ${response.status}`);
         }
         return await response.json();
     } catch (error) {
@@ -51,7 +62,7 @@ const api = {
      * Uploads the form data to the server.
      *
      * @param {FormData} formData - The form data to be uploaded.
-     * @example
+     * @example for sana1.0
      * const formData = new FormData();
      * formData.append('files', file1);
      * formData.append('files', file2);
@@ -66,10 +77,42 @@ const api = {
      * @returns {Promise} - A promise that resolves with the server response.
      */
     upload: async (formData) => {
-        return await apiRequest("/jobs/preprocess", {
+        return await apiRequest(
+            "/jobs/preprocess",
+            {
+                method: "POST",
+                body: formData,
+            },
+            true
+        );
+    },
+    process: async (jobId) => {
+        return await apiRequest("/jobs/process", {
             method: "POST",
-            body: formData 
+            body: JSON.stringify({ id: jobId }),
         });
+    },
+    getJobStatus: async (jobId) => {
+        return await apiRequest(`/jobs/${jobId}`);
+    },
+    /**
+     * @typedef {import('../../backend/controllers/jobController').ErrorMessageResponse} ErrorMessageResponse
+     * @typedef {import('../../backend/controllers/jobController').ProcessedJobResponse} ProcessedJobResponse
+     * @typedef {import('../../backend/controllers/jobController').FailedJobResponse} FailedJobResponse
+     */
+    /**
+     * @param {string} jobId
+     * @returns {Promise<ProcessedJobResponse | ErrorMessageResponse | FailedJobResponse | ErrorResponse>}
+     */
+    getJobResult: async (jobId) => {
+        return await apiRequest(`/jobs/results/${jobId}`);
+    },
+    downloadJobZip: async (jobId) => {
+        const response = await fetch(`${API_URL}/api/jobs/${jobId}/zip`);
+        if (!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+        return await response.blob();
     },
 };
 

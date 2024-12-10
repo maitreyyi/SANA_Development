@@ -4,11 +4,14 @@ const path = require("path");
 const HttpError = require("./HttpError");
 
 const validExtensions = ["gw", "el"];
+const tmpDir = path.join(__dirname, '../tmp');
+
 
 const upload = multer({
-    dest: "./backend/tmp/",
+    dest: tmpDir,
     // limits: { fileSize: 1000000 }, // limit file size to 1MB
     fileFilter: (req, file, cb) => {
+        // console.log("Uploading file:", file.originalname); // Log the file name
         // Check for valid file extension
         const fileExt = path.extname(file.originalname).toLowerCase().slice(1);
         if (!validExtensions.includes(fileExt)) {
@@ -33,6 +36,7 @@ const upload = multer({
 });
 
 const validateFilesMiddleware = (req, res, next) => {
+    // console.log("Validating files:", req.files); // Log the files array
     if (!req.files || req.files.length < 2) {
         throw new HttpError("Two files must be uploaded.", 400);
     }

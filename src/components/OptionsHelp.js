@@ -1,20 +1,16 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Button from "./Button";
 import AlignmentOptions from "./AlignmentOptions";
 import PropTypes from "prop-types";
+import Note from "./Note";
 
 const OptionsHelp = ({ handleOptionChange, options }) => {
     const [optionsShow, setOptionsShow] = useState(false);
 
     return (
         <div className="w-full mx-auto">
-            <div
-                id="options-help-menu"
-                className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded-lg shadow-sm mt-4"
-                // className="bg-zinc-300 border border-1 border-slate-500 p-6  shadow-md flex flex-col items-center mx-auto gap-2"
-            >
+            <Note>
                 {/* <h2 className="text-3xl w-full">Options Help</h2> */}
-                <h2 className="text-lg font-bold text-yellow-800 mb-2">NOTE</h2>
                 <p className="w-full">
                     Hover over an option to see its description or click the
                     button to view the entire help menu.
@@ -32,7 +28,7 @@ const OptionsHelp = ({ handleOptionChange, options }) => {
                     {optionsShow && (
                         <div className="w-full">
                             <hr />
-                            <h2 className="text-2xl">
+                            <h2 className="text-2xl text-yellow-800">
                                 Standard Network Alignment Options
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-[auto,1fr] gap-8">
@@ -55,7 +51,7 @@ const OptionsHelp = ({ handleOptionChange, options }) => {
                         </div>
                     )}
                 </div>
-            </div>
+            </Note>
             <AlignmentOptions
                 handleOptionChange={handleOptionChange}
                 options={options}

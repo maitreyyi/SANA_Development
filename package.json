@@ -22,7 +22,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
+    "start:frontend": "react-scripts start", 
+    "start:backend": "node backend/server.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
@@ -48,6 +50,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
     "nodemon": "^3.1.7",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14"

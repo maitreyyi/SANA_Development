@@ -1,8 +1,5 @@
-const API_URL =
-    process.env.NODE_ENV === "development"
-        ? process.env.REACT_APP_API_URL
-        : window.location.origin;
-
+const API_URL = process.env.REACT_APP_API_URL ?? 'http://localhost:3000';
+console.log(API_URL);
 /**
  * @typedef {import('../../backend/middlewares/ErrorHandler').ErrorHandler} ErrorHandler
  */

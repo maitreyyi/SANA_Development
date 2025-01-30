@@ -1,7 +1,58 @@
 import Note from "./Note";
+// import { SanaVersions } from "../pages/SubmitJob";
+import { inputClasses } from "../utils/tailwindClasses";
+import { useJobSubmission } from "../context/JobSubmissionContext";
 
-const NetworkSelection = ({ handleFileInputChange, sanaVersion }) => {
+const SimliarityFileRow = ({
+    handleRowWeightChange,
+    handleRowFileChange,
+    rowWeight,
+    i,
+}) => {
+    const handleWeightChange = (event) => {
+        const weight = parseFloat(event.target.value) || 0;
+        handleRowWeightChange(weight, i);
+    };
 
+    return (
+        <div className="flex flex-col md:flex-row items-center">
+            <div className="md:w-1/2 mb-4 md:mb-0">
+                <p>External simliarity file: {i + 1}</p>
+                <div className="w-full md:w-1/3">
+                    <input
+                        className={inputClasses}
+                        onChange={handleWeightChange}
+                        type="number"
+                        value={rowWeight}
+                    ></input>
+                </div>
+            </div>
+            <div className="w-60 md:w-1/2">
+                <input
+                    type="file"
+                    id={`Optional File Input ${i + 1}`}
+                    className="file-input border rounded-md shadow-sm p-2 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    name={`optional-files-${i + 1}}`}
+                    onChange={(e) => handleRowFileChange(e, i)}
+                ></input>
+            </div>
+        </div>
+    );
+};
+
+const NetworkSelection = () => {
+    const {
+        SanaVersions,
+        handleFileInputChange,
+        sanaVersion,
+        handleNetworkSelectionOptional,
+    } = useJobSubmission();
+    const {
+        similarityData,
+        handleOptionalFilesCountChange,
+        handleSimilarityFileChange,
+        handleSimilarityWeightChange,
+    } = handleNetworkSelectionOptional();
 
     return (
         <div className="content select-networks active visited">
@@ -25,7 +76,7 @@ const NetworkSelection = ({ handleFileInputChange, sanaVersion }) => {
                     Please note the following:
                 </p>
                 <ul className="list-disc list-inside ml-4 text-gray-700">
-                    {sanaVersion === "SANA1" && (
+                    {sanaVersion === SanaVersions.SANA1 && (
                         <>
                             <li>The networks must be of the same file type.</li>
                             <li>
@@ -44,7 +95,8 @@ const NetworkSelection = ({ handleFileInputChange, sanaVersion }) => {
                             </li>
                         </>
                     )}
-                    {(sanaVersion === "SANA1_1" || sanaVersion === "SANA2") && (
+                    {(sanaVersion === SanaVersions.SANA1_1 ||
+                        sanaVersion === SanaVersions.SANA2) && (
                         <>
                             <li>The networks must be of the same file type.</li>
                             <li>
@@ -137,20 +189,42 @@ const NetworkSelection = ({ handleFileInputChange, sanaVersion }) => {
                                 </li>
                             </ul>
                             <div className="mt-4">
-                            <select
-                                id="similarity-files"
-                                // value={sanaVersion}
-                                // onChange={handleVersionChange}
-                                className="p-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                            >
-                                <option value="0">0</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                            </select>
-                        </div>
+                                <select
+                                    id="similarity-files"
+                                    // value={optionalFilesCount}
+                                    onChange={handleOptionalFilesCountChange}
+                                    className="p-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                                >
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                            </div>
                         </Note>
-
+                        {sanaVersion === SanaVersions.SANA2 &&
+                            similarityData.optionalFilesCount > 0 && (
+                                <Note title="">
+                                    {Array.from({
+                                        length: similarityData.optionalFilesCount,
+                                    }).map((_, i) => (
+                                        <SimliarityFileRow
+                                            key={"simliarityFileRow " + i}
+                                            handleRowWeightChange={
+                                                handleSimilarityWeightChange
+                                            }
+                                            handleRowFileChange={
+                                                handleSimilarityFileChange
+                                            }
+                                            rowWeight={
+                                                similarityData
+                                                    .similarityWeights[i]
+                                            }
+                                            i={i}
+                                        />
+                                    ))}
+                                </Note>
+                            )}
                     </>
                 )}
             </div>

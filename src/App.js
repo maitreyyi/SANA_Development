@@ -25,7 +25,7 @@ function App() {
               } 
             />
             <Route path="/submit-job/:id" element={<ProcessingJob />} />
-            <Route exact="/lookup-job" element={<LookupJob />} />
+            <Route path="/lookup-job" element={<LookupJob />} />
             <Route path="/lookup-job/:id" element={<Results />} />
             <Route path="/contact" element={<Contact />} />
           </Routes>

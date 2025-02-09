@@ -8,6 +8,7 @@ import Contact from "./pages/Contact";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Results from "./pages/Results";
+import LoginForm from "./pages/LoginForm";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <main className="w-full max-w-[900px] flex-1 flex flex-col *:flex-1 *:flex *:flex-col">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path = "/login" element={<LoginForm />} />
             <Route path="/submit-job" element={<SubmitJob />} />
             <Route path="/submit-job/:id" element={<ProcessingJob />} />
             <Route exact="/lookup-job" element={<LookupJob />} />

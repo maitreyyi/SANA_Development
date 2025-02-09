@@ -51,6 +51,7 @@ function Footer() {
                                 {formattedDate}
                             </span>
                         </p>
+                        <Link to = "/login">Log In</Link>
                     </div>
                 </div>
 

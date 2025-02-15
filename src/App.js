@@ -15,7 +15,7 @@ function App() {
     <Router>
       <div className="min-h-screen flex flex-col items-center justify-center *:w-full">
       <Header />
-        <main className="w-full max-w-[900px] flex-1 flex flex-col *:flex-1 *:flex *:flex-col">
+        <main className="w-full max-w-5xl flex-1 flex flex-col *:flex-1 *:flex *:flex-col">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path = "/login" element={<LoginForm />} />

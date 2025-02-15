@@ -1,4 +1,5 @@
 import Note from "./Note";
+import { Link } from "react-router-dom";
 
 const NetworkSelection = ({ handleFileInputChange, sanaVersion }) => {
 
@@ -117,6 +118,10 @@ const NetworkSelection = ({ handleFileInputChange, sanaVersion }) => {
                         ></input>
                     </div>
                 </div>
+                <div className="text-sm md:w-1/2">
+                    <Link to = "/login">Have 10 or more files? Log In</Link>
+                </div>
+
                 {sanaVersion === "SANA2" && (
                     <>
                         <Note title={"OPTIONAL"}>

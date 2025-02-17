@@ -1,48 +1,40 @@
 import React from "react";
-import { useState } from "react";
+import { signIn } from "next-auth/react"; // Use if you're using NextAuth.js
 import Button from "../components/Button";
-
 
 const LoginForm = () => {
     return (
-        <div className = "flex h-screen items-center justify-center w-full !max-w-none px-4">
-            <div className = "flex w-full max-w-5xl bg-white shadow-lg rounded-lg overflow-hidden">
-                {/*left side -- login form */}
-                <div className = "w-full md:w-3/5 p-6">
-                    <h2 className = "text-3xl font-semibold text-center text-blue-600">Login</h2>
+        <div className="flex h-screen items-center justify-center w-full !max-w-none px-4">
+            <div className="flex w-full max-w-5xl bg-white shadow-lg rounded-lg overflow-hidden">
+                
+                {/* Left Side - OAuth Login */}
+                <div className="w-full md:w-3/5 p-6">
+                    <h2 className="text-3xl font-semibold text-center text-blue-600">Login</h2>
 
-                    <form className = "mt-6">
-                        <div>
-                            <label className="block text-gray-700">Email or Username</label>
-                            <input type="text" className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Enter email or username"/>
-                        </div>
+                    <div className="mt-6 space-y-4">
+                        <Button onClick={() => signIn("google")} className="w-full bg-red-500 hover:bg-red-600 text-white">
+                            Sign in with Google
+                        </Button>
 
-                        <div className="mt-4">
-                            <label className="block text-gray-700">Password</label>
-                            <input type="password" className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Enter password"/>
-                        </div>
+                        <Button onClick={() => signIn("github")} className="w-full bg-gray-800 hover:bg-gray-900 text-white">
+                            Sign in with GitHub
+                        </Button>
 
-                        <div className="flex justify-between items-center mt-4">
-                            <label className="flex items-center">
-                                <input type="checkbox" className="form-checkbox" />
-                                <span className="ml-2 text-gray-600 text-sm">Remember me</span>
-                            </label>
-                            <a href="#" className="text-sm text-blue-500 hover:underline">Forgot password?</a>
-                        </div>
+                        <Button onClick={() => signIn("facebook")} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                            Sign in with Facebook
+                        </Button>
+                    </div>
 
-                        <Button>Sign In</Button>
-
-                    </form>
-
-                    <p className="mt-4 text-center text-gray-600 text-sm">Not a member? <a href="#" className="text-blue-500 hover:underline">Register</a></p>
-
+                    <p className="mt-4 text-center text-gray-600 text-sm">
+                        By signing in, you agree to our <a href="#" className="text-blue-500 hover:underline">Terms & Conditions</a>
+                    </p>
                 </div>
 
-                {/*right side -- sana gif */}
-                <div className = "w-full md:w-2/5 flex items-center justify-center">
+                {/* Right Side - SANA Animation */}
+                <div className="w-full md:w-2/5 flex items-center justify-center">
                     <div>
-                        <h3 className ="text-3xl font-semibold text-center">Simulated Annealing Network Aligner</h3>
-                        <img src = "network-alignment.gif" alt = "SANA animation" className = "w-64 md:w-80"/>
+                        <h3 className="text-3xl font-semibold text-center">Simulated Annealing Network Aligner</h3>
+                        <img src="network-alignment.gif" alt="SANA animation" className="w-64 md:w-80"/>
                     </div>
                 </div>
 

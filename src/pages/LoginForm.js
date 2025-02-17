@@ -1,6 +1,13 @@
 import React from "react";
-import { signIn } from "next-auth/react"; // Use if you're using NextAuth.js
 import Button from "../components/Button";
+
+const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:5000/auth/google"; // ✅ Redirects user to backend Google OAuth route
+};
+
+const handleLogout = () => {
+    window.location.href = "http://localhost:5000/auth/logout"; // ✅ Logs user out and redirects to home
+};
 
 const LoginForm = () => {
     return (
@@ -12,17 +19,10 @@ const LoginForm = () => {
                     <h2 className="text-3xl font-semibold text-center text-blue-600">Login</h2>
 
                     <div className="mt-6 space-y-4">
-                        <Button onClick={() => signIn("google")} className="w-full bg-red-500 hover:bg-red-600 text-white">
+                        <Button onClick={handleGoogleLogin} className="w-full bg-red-500 hover:bg-red-600 text-white">
                             Sign in with Google
                         </Button>
 
-                        <Button onClick={() => signIn("github")} className="w-full bg-gray-800 hover:bg-gray-900 text-white">
-                            Sign in with GitHub
-                        </Button>
-
-                        <Button onClick={() => signIn("facebook")} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                            Sign in with Facebook
-                        </Button>
                     </div>
 
                     <p className="mt-4 text-center text-gray-600 text-sm">

@@ -4,6 +4,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const ErrorHandler = require("./middlewares/ErrorHandler");
 const cors = require('cors');
+const session = require('express-session');
+const passport = require('passport');
+const authRoutes = require('./routes/auth');
 const jobRoutes = require('./routes/jobRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -14,11 +17,20 @@ if (process.env.NODE_ENV === 'development') {
 }
 app.use(bodyParser.json());
 
+//session management for google OAuth
+app.use(session({
+  secret: 'your_secret_key', // CHANGE THIS
+  saveUninitialized: true,
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
 // api routes
 app.use('/api/jobs', jobRoutes);
 
 // error handling middleware after routes
 app.use(ErrorHandler);
+app.use('/auth', authRoutes); //google auth route
 
 // serve static files and fallback to index.html for client-side routing
 if (process.env.NODE_ENV === 'production'){

@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const ErrorHandler = require("./middlewares/ErrorHandler");
 const cors = require('cors');
 const jobRoutes = require('./routes/jobRoutes');
+const authRoutes = require('./routes/authRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -15,6 +16,7 @@ if (process.env.NODE_ENV === 'development') {
 app.use(bodyParser.json());
 
 // api routes
+app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 
 // error handling middleware after routes

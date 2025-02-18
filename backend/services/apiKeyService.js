@@ -1,3 +1,7 @@
+/*
+  Helper functions to manage users and API keys in sqlite database.
+*/
+
 const crypto = require('crypto');
 const db = require('../config/database');
 
@@ -5,13 +9,18 @@ const generateApiKey = () => {
     return crypto.randomBytes(32).toString('hex');
 };
 
+const checkApiKeyExists = async (apiKey) => {
+  const row = await db.get('SELECT 1 FROM users WHERE api_key = ? LIMIT 1', [apiKey]);
+  return row !== undefined;
+};
+
 const generateUniqueApiKey = async () => {
   let apiKey;
   let exists;
   
-  do { // generate a unique api key until it doesn't exist in the database
+  do { // if generated API key is not unique, keep generating until it is
     apiKey = generateApiKey();
-    exists = await validateApiKey(apiKey); // exists is true if the api key already exists in the database, and null if it doesn't
+    exists = await checkApiKeyExists(apiKey);
   } while (exists);
   
   return apiKey;
@@ -19,6 +28,7 @@ const generateUniqueApiKey = async () => {
 
 const createUser = async (email) => {
     const apiKey = await generateUniqueApiKey();
+    console.log(apiKey);
     
     return new Promise((resolve, reject) => {
       db.run(

@@ -7,7 +7,7 @@ const cors = require('cors');
 const jobRoutes = require('./routes/jobRoutes');
 const authRoutes = require('./routes/authRoutes');
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 6000;
 
 // cors and bodyparser middleware
 if (process.env.NODE_ENV === 'development') {
@@ -32,4 +32,9 @@ if (process.env.NODE_ENV === 'production'){
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+});
+
+app.get("/", (req, res) => {
+  console.log('test');
+  res.send("hello!");
 });

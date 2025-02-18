@@ -6,7 +6,7 @@ const apiKeyMiddleware = require('../middlewares/apiKeyMiddleware');
 // Apply API key middleware to job routes
 router.use(apiKeyMiddleware);
 
-router.post('/submit', jobController.submitJob);
+// router.post('/submit', jobController.submitJob);
 router.get('/status/:id', jobController.getJobStatus);
 
 module.exports = router;

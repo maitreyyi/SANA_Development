@@ -23,10 +23,6 @@ const apiKeyMiddleware = require('../middlewares/apiKeyMiddleware');
 // Apply API key middleware to job routes
 router.use(apiKeyMiddleware);
 
-<<<<<<< HEAD
-// router.post('/submit', jobController.submitJob);
-router.get('/status/:id', jobController.getJobStatus);
-=======
 /**
  * @typedef {import('../services/jobService').JobData} JobData
  * @typedef {import('../services/jobService').RedirectToResults} RedirectToResults
@@ -49,6 +45,5 @@ router.post('/process', processController);
 router.get('/:id', getJobResults);
 // router.get('/api/jobs', lookupJobsController); <-- for admin page in future 
 
->>>>>>> origin/main
 
 module.exports = router;

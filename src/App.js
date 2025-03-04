@@ -9,6 +9,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Results from "./pages/Results";
 import LoginForm from "./pages/LoginForm";
+import RegisterForm from "./pages/RegisterForm";
 import { JobSubmissionProvider } from "./context/JobSubmissionContext";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path = "/login" element={<LoginForm />} />
+            <Route path = "/register" element={<RegisterForm />} />
             <Route path="/submit-job" element={
               <JobSubmissionProvider>
                 <SubmitJob/>

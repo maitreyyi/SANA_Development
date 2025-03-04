@@ -5,7 +5,7 @@ const bcrypt = require("bcrypt");
 // Manual Registration (Email & Password)
 const register = async (req, res) => {
   try {
-    const { email, password, first_name, last_name} = req.body;
+    const { first_name, last_name, email, password} = req.body;
 
     const userExists = await apiKeyService.userExists(email);
     if (userExists) {
@@ -13,7 +13,7 @@ const register = async (req, res) => {
     }
     
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await apiKeyService.createUser(null, email, hashedPassword, first_name, last_name); // No Google ID, manual user
+    const user = await apiKeyService.createUser(null, email, first_name, last_name, hashedPassword); // No Google ID, manual user
 
     res.status(201).json({ message: "User registered successfully.", apiKey: user.apiKey });
   } catch (error) {

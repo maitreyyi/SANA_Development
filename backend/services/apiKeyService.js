@@ -25,6 +25,7 @@ const userLogin = async (email, password) => {
           console.log("Login failed: User not found");
           return { success: false, message: "User not found." };
       }
+      console.log("Login: User found");
 
       // Fetch the user's hashed password from the database
       return new Promise((resolve, reject) => {
@@ -43,9 +44,11 @@ const userLogin = async (email, password) => {
                   console.log("Google user authenticated.");
                   return resolve({ success: true, message: "Google user authenticated.", user });
               }
+              console.log("Checked isMatch: ",user);
 
               // Verify password for manual users
               const isMatch = await bcrypt.compare(password, user.password);
+              
               if (!isMatch) {
                   console.log("Login failed: Incorrect password");
                   return resolve({ success: false, message: "Invalid credentials." });
@@ -55,7 +58,7 @@ const userLogin = async (email, password) => {
               //const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
               console.log("Login successful.");
-              return resolve({ success: true, token });
+              return resolve({ success: true });
           });
       });
 
@@ -105,7 +108,7 @@ const generateUniqueApiKey = async () => {
   return apiKey;
 };
 
-const createUser = async (googleID, email, first_name, last_name) => {
+const createUser = async (googleID, email, first_name, last_name, password) => {
   const apiKey = await generateUniqueApiKey();
   // console.log('Attempting to insert with values:', {
   //     googleID,
@@ -125,8 +128,8 @@ const createUser = async (googleID, email, first_name, last_name) => {
   
   return new Promise((resolve, reject) => {
     db.run(
-      'INSERT INTO users (google_id, email, first_name, last_name, password, api_key) VALUES (?, ?, ?, ?)',
-      [googleID || null, email, first_name || NULL, last_name || NULL, password || NULL, apiKey],
+      'INSERT INTO users (google_id, email, first_name, last_name, password, api_key) VALUES (?, ?, ?, ?,  ?, ?)',
+      [googleID || null, email, first_name || null, last_name || null, password || null, apiKey],
       function(err) {
         if (err) {
           console.error('Database error:', err.message);

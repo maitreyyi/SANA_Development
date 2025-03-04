@@ -20,8 +20,9 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS jobs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id TEXT,
-    status TEXT,
+    status TEXT CHECK(status IN ('ACTIVE', 'COMPLETED', 'FAILED', 'CANCELLED', 'PENDING')) DEFAULT 'ACTIVE',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at DATETIME,
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`);
 });

@@ -12,7 +12,7 @@ router.get(
     passport.authenticate("google", { failureRedirect: "http://localhost:3000/login" }),
     (req, res) => {
         // Successful login - Redirect to frontend
-        res.redirect("http://localhost:3000");
+        res.redirect("http://localhost:3000/dashboard");
     }
 );
 

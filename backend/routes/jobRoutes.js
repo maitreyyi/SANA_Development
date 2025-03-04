@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-const express = require('express');
-=======
 // dest: 'backend/tmp/'     --> maybe use 'backend/process' maybe not
 const { 
     upload, 
@@ -15,7 +12,6 @@ const {
     submitJobController, 
     processController
 } = require("../controllers/jobController");
->>>>>>> origin/main
 const router = express.Router();
 const jobController = require('../controllers/jobController');
 const apiKeyMiddleware = require('../middlewares/apiKeyMiddleware');

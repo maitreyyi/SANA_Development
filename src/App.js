@@ -10,7 +10,10 @@ import Footer from "./components/Footer";
 import Results from "./pages/Results";
 import LoginForm from "./pages/LoginForm";
 import RegisterForm from "./pages/RegisterForm";
+import Dashboard from "./pages/Dashboard";
+import APIRequestForm from "./pages/APIRequestForm";
 import { JobSubmissionProvider } from "./context/JobSubmissionContext";
+import SubmitJobModal from "./pages/SubmitJobModal";
 
 function App() {
   return (
@@ -21,7 +24,10 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path = "/login" element={<LoginForm />} />
+            <Route path = "/dashboard" element={<Dashboard />} />
             <Route path = "/register" element={<RegisterForm />} />
+            <Route path = "/request-apiskey" element={<APIRequestForm />} />
+            <Route path = "/submit-zip" element={<SubmitJobModal />} />
             <Route path="/submit-job" element={
               <JobSubmissionProvider>
                 <SubmitJob/>

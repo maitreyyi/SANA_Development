@@ -6,7 +6,7 @@
 // import { CONFIG } from "../config/modelOptions";
 // import path from "path";
 const { createHash } = require("crypto");
-const { saveJobState, getJob } = require("../repositories/jobRepository");
+//const { saveJobState, getJob } = require("../repositories/jobRepository");
 const { preprocess } = require("./preprocessService");
 const { jobProcess } = require("./processService");
 // const { cleanupFiles } = require("../utils/fileSystem");
@@ -115,7 +115,8 @@ const createJob = async (files, options, sanaVersion) => {
     }
 };
 
-const retryProcessing = async (jobId) => {
+/**
+ * const retryProcessing = async (jobId) => {
     const job = await getJob(jobId);
 
     if (!job.preprocessedPath) {
@@ -147,9 +148,10 @@ const retryProcessing = async (jobId) => {
         throw error;
     }
 };
+**/
 
 module.exports = {
     createJob, 
-    retryProcessing, 
-    getJob
+    //retryProcessing, 
+    //getJob
 };

@@ -7,8 +7,12 @@ const db = new sqlite3.Database(path.join(__dirname, 'users.db'));
 // id is the unique Google ID
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    email TEXT UNIQUE,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    google_id TEXT UNIQUE,
+    email TEXT UNIQUE NOT NULL,
+    first_name TEXT,
+    last_name TEXT,
+    password TEXT,
     api_key TEXT UNIQUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);

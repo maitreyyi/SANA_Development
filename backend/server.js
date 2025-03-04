@@ -5,12 +5,11 @@ const bodyParser = require('body-parser');
 const ErrorHandler = require("./middlewares/ErrorHandler");
 const cors = require('cors');
 const session = require('express-session');
-const passport = require('passport');
-//const authRoutes = require('./routes/auth');
-const jobRoutes = require('./routes/jobRoutes');
+const passport = require('./services/auth');
 const authRoutes = require('./routes/authRoutes');
+const jobRoutes = require('./routes/jobRoutes');
 const app = express();
-const PORT = process.env.PORT || 6000;
+const PORT = process.env.PORT || 4000;
 
 // cors and bodyparser middleware
 if (process.env.NODE_ENV === 'development') {
@@ -34,7 +33,6 @@ app.use('/api/jobs', jobRoutes);
 
 // error handling middleware after routes
 app.use(ErrorHandler);
-app.use('/auth', authRoutes); //google auth route
 
 // serve static files and fallback to index.html for client-side routing
 if (process.env.NODE_ENV === 'production'){

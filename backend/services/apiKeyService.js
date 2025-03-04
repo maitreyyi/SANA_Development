@@ -4,6 +4,8 @@
 
 const crypto = require('crypto');
 const db = require('../config/database');
+const { use } = require('passport');
+const bcrypt = require('bcrypt');
 
 const generateApiKey = () => {
     return crypto.randomBytes(32).toString('hex');
@@ -15,18 +17,67 @@ const checkApiKeyExists = async (apiKey) => {
   return row !== undefined;
 };
 
+const userLogin = async (email, password) => {
+  try {
+      // Check if user exists
+      const exists = await userExists(email);
+      if (!exists) {
+          console.log("Login failed: User not found");
+          return { success: false, message: "User not found." };
+      }
+
+      // Fetch the user's hashed password from the database
+      return new Promise((resolve, reject) => {
+          db.get("SELECT * FROM users WHERE email = ?", [email], async (err, user) => {
+              if (err) {
+                  console.error("Database error:", err);
+                  return reject({ success: false, message: "Database error." });
+              }
+
+              if (!user) {
+                  return resolve({ success: false, message: "User not found." });
+              }
+
+              // If user has a Google ID, no password verification is needed
+              if (user.google_id) {
+                  console.log("Google user authenticated.");
+                  return resolve({ success: true, message: "Google user authenticated.", user });
+              }
+
+              // Verify password for manual users
+              const isMatch = await bcrypt.compare(password, user.password);
+              if (!isMatch) {
+                  console.log("Login failed: Incorrect password");
+                  return resolve({ success: false, message: "Invalid credentials." });
+              }
+
+              // Generate JWT token
+              //const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+              console.log("Login successful.");
+              return resolve({ success: true, token });
+          });
+      });
+
+  } catch (error) {
+      console.error("Login error:", error);
+      return { success: false, message: "Internal server error." };
+  }
+};
+
 const userExists = async (email) => {
     return new Promise((resolve, reject) => {
-      db.get('SELECT 1 FROM users WHERE email = ? LIMIT 1', [email], (err, row) => {
+      db.get('SELECT email FROM users WHERE email = ? LIMIT 1', [email], (err, row) => {
         if (err) {
-          console.error("Error:", err);
-          resolve(false);
+          console.error("Database error:", err);
+          //resolve(false);
+          reject(err);
         } else if (row === undefined) {
-          console.log("No row found.");
-          resolve(false);
+          console.log("No row found with email: ", email);
+          return resolve(false);
         } else {
           console.log("Row found:", row);
-          resolve(true);
+          return resolve(true);
         }
       });
     });
@@ -54,7 +105,7 @@ const generateUniqueApiKey = async () => {
   return apiKey;
 };
 
-const createUser = async (googleID, email) => {
+const createUser = async (googleID, email, first_name, last_name) => {
   const apiKey = await generateUniqueApiKey();
   // console.log('Attempting to insert with values:', {
   //     googleID,
@@ -74,8 +125,8 @@ const createUser = async (googleID, email) => {
   
   return new Promise((resolve, reject) => {
     db.run(
-      'INSERT INTO users (id, email, api_key) VALUES (?, ?, ?)',
-      [googleID, email, apiKey],
+      'INSERT INTO users (google_id, email, first_name, last_name, password, api_key) VALUES (?, ?, ?, ?)',
+      [googleID || null, email, first_name || NULL, last_name || NULL, password || NULL, apiKey],
       function(err) {
         if (err) {
           console.error('Database error:', err.message);
@@ -137,6 +188,7 @@ const getCurrentJobCount = async (userId) => {
     });
 };
 
+
 module.exports = {
     generateApiKey,
     generateUniqueApiKey,
@@ -144,4 +196,5 @@ module.exports = {
     validateApiKey,
     getCurrentJobCount,
     userExists,
+    userLogin
 }; 

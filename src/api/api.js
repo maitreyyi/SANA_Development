@@ -3,6 +3,9 @@ console.log(API_URL);
 /**
  * @typedef {import('../../backend/middlewares/ErrorHandler').ErrorHandler} ErrorHandler
  */
+
+
+//need api/login
 const apiRequest = async (endpoint, options = {}, hasMultipart = false) => {
     console.log('endpoint:', `${API_URL}/api${endpoint}`);//TESTING
     const headers = {

@@ -1,33 +1,43 @@
 const apiKeyService = require('../services/apiKeyService');
 const HttpError = require('../middlewares/HttpError');
+const bcrypt = require("bcrypt");
 
-const register = async (req, res, next) => {
-  // oauth middleware runs first 
-  // if successful, oauth will give us the unique google ID of the user, as well as their email which we will store in the DB
-  // first need to check if the user already exists in the DB
-
+// Manual Registration (Email & Password)
+const register = async (req, res) => {
   try {
-    const { googleID, email } = req.body;
+    const { email, password, first_name, last_name} = req.body;
 
-    if (!email) {
-      res.status(400).send("Email is required");
-      // throw new HttpError('Email is required', 400);
-    }
     const userExists = await apiKeyService.userExists(email);
-    console.log('user exists: ', userExists);
     if (userExists) {
-      res.status(400).send("User already exists");
+      return res.status(400).json({ message: "User already exists." });
     }
-    const user = await apiKeyService.createUser(googleID, email);
     
-    res.json({
-      success: true,
-      message: 'Registration successful',
-      apiKey: user.apiKey
-    });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await apiKeyService.createUser(null, email, hashedPassword, first_name, last_name); // No Google ID, manual user
+
+    res.status(201).json({ message: "User registered successfully.", apiKey: user.apiKey });
   } catch (error) {
-    next(error);
+    console.error(error);
+    res.status(500).json({ message: "Server error." });
   }
 };
 
-module.exports = { register }; 
+const login = async (req, res) => {
+  try {
+    const { email, password} = req.body;
+    const loggedIn = await apiKeyService.userLogin(email, password);
+
+    if (loggedIn) {
+      return res.status(200).json({message: "User is logged in.", success: true});
+    } else {
+      return res.status(400).json({message: "User does not exist"})
+    }
+    
+  } catch(error){
+    console.error(error);
+    res.status(500).json({message: "Server error"});
+  }
+};
+
+module.exports = { login, register}
+

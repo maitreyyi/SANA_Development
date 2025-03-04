@@ -11,7 +11,9 @@ const PORT = process.env.PORT || 6000;
 
 // cors and bodyparser middleware
 if (process.env.NODE_ENV === 'development') {
-  app.use(cors());
+  app.use(cors({
+    origin: '*',
+  }));
 }
 app.use(bodyParser.json());
 

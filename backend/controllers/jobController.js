@@ -1,42 +1,43 @@
 const path = require("path");
 const fs = require("fs");
-const { sanitize } = require("../services/preprocessService");
+const { sanitize } = require("../utils/sanitize");
 const HttpError = require("../middlewares/HttpError");
-const { createHash } = require("crypto");
-const { getJobData, getJobExecutionLog } = require("../services/jobService");
-const { jobProcessingService } = require("../services/processService");
+const { VALID_MODELS } = require("../config/modelOptions");
+const { createJob } = require("../services/jobService");
+const { jobProcess } = require('../services/processService');
+const getJobExecutionLog = require('../utils/getJobExecutionLog');
 
-/**
- * Gets the job status based on the request parameters.
- * @param {Object} req - The request object.
- * @param {Object} req.params - The request parameters.
- * @param {string} req.params.id - The job ID.
- * @param {Object} res - The response object.
- * @param {Function} next - The next middleware function.
- * @returns {Promise<void>}
- */
-const getJobStatus = async (req, res, next) => {
-    try {
-        const id = req.params.id;
+// /**
+//  * Gets the job status based on the request parameters.
+//  * @param {Object} req - The request object.
+//  * @param {Object} req.params - The request parameters.
+//  * @param {string} req.params.id - The job ID.
+//  * @param {Object} res - The response object.
+//  * @param {Function} next - The next middleware function.
+//  * @returns {Promise<void>}
+//  */
+// const getJobStatus = async (req, res, next) => {
+//     try {
+//         const id = req.params.id;
 
-        if (!id) {
-            // maybe provide explicit description later
-            return res.json({ redirect: "/" });
-        }
+//         if (!id) {
+//             // maybe provide explicit description later
+//             return res.json({ redirect: "/" });
+//         }
 
-        const jobData = await getJobData(id);
+//         const jobData = await getJobData(id);
 
-        if (jobData.redirectToResults) {
-            return res.json({ redirect: `/submit-job/${id}` });
-            // will display error on the frontside!
-        }
+//         if (jobData.redirectToResults) {
+//             return res.json({ redirect: `/submit-job/${id}` });
+//             // will display error on the frontside!
+//         }
 
-        res.json(jobData);
-    } catch (error) {
-        console.error(error);
-        throw new HttpError("Internal Server Error", 500);
-    }
-};
+//         res.json(jobData);
+//     } catch (error) {
+//         console.error(error);
+//         throw new HttpError("Internal Server Error", 500);
+//     }
+// };
 
 /**
  * Downloads the zip file for a job based on the request parameters.
@@ -56,7 +57,7 @@ const downloadZipJob = async (req, res, next) => {
     try {
         const infoJsonContent = fs.readFileSync(infoFilePath, "utf8");
         const jobData = JSON.parse(infoJsonContent);
-        const zipName = jobData.zip_name;
+        const zipName = jobData.zipName;
         const zipLocation = path.join(
             __dirname,
             `../process/${jobId}`,
@@ -79,19 +80,8 @@ const downloadZipJob = async (req, res, next) => {
     }
 };
 
-/**
- * Expected request object for SANA1:
- * {
- *   files: [File, File], // Array of two files
- *   options: {
- *     t: Number,
- *     s3: Number,
- *     ec: Number
- *   },
- *   version: "SANA1", "SANA1_1", OR "SANA2
- * }
- */
-const preprocessJob = async (req, res, next) => {
+// Controllers
+const submitJobController = async (req, res, next) => {
     try {
         // 1. sanitize inputs received to the options form
         if (!req.body.options) {
@@ -101,177 +91,68 @@ const preprocessJob = async (req, res, next) => {
         if (!sanaVersion) {
             throw new HttpError('Version field is required.', 400);
         }
+        if(!VALID_MODELS.has(sanaVersion)){
+            throw new HttpError('Version must be valid version', 400);
+        }
         const sanitizedOptions = await sanitize(req.body.options, sanaVersion);
         if (process.env.NODE_ENV === "development") {
             console.log("before sanitation:", req.body.options);
             console.log("after sanitation:", sanitizedOptions);
         }
         req.body.options = sanitizedOptions;
-        // MAPPING TO SANA MODEL NAME HERE
-        const versionMap = {
-            "SANA1": "SANA1.0",
-            "SANA1_1": "SANA1.1",
-            "SANA2": "SANA2.0"
-        };
-        const mappedSanaVersion = versionMap[sanaVersion] || sanaVersion;
-
-        // validation of files already complete
-
-        // 2. create a job id hash
-        const network1FullName = req.files[0].originalname;
-        const network2FullName = req.files[1].originalname;
-
-        const network1Name = network1FullName.substring(
-            0,
-            network1FullName.lastIndexOf(".")
-        );
-        const network2Name = network2FullName.substring(
-            0,
-            network2FullName.lastIndexOf(".")
-        );
-
-        const jobId = createHash("md5")
-            .update(Date.now() + network1Name + network2Name)
-            .digest("hex");
-
-        // 3. create an object containing info about the job
-        const jobData = {
-            id: jobId,
-            jobLocation: path.join(__dirname, "../process", jobId),
-            extension: path.extname(req.files[0].originalname).toLowerCase(),
-            network1Name: network1Name,
-            network2Name: network2Name,
-        };
-        console.log(`Created jobData preprocess: `, jobData); //TESTING
-
-        // 4. create directories for the job
-        const jobLocation = jobData.jobLocation;
-        const network1Dir = path.join(
-            jobLocation,
-            "networks",
-            jobData.network1Name
-        );
-        const network2Dir = path.join(
-            jobLocation,
-            "networks",
-            jobData.network2Name
-        );
-
-        try {
-            fs.mkdirSync(jobLocation, { recursive: true });
-            fs.mkdirSync(path.join(jobLocation, "networks"), {
-                recursive: true,
-            });
-
-            fs.mkdirSync(network1Dir, { recursive: true });
-            if (network1Name !== network2Name) {
-                fs.mkdirSync(network2Dir, { recursive: true });
-            }
-        } catch (e) {
-            throw new HttpError(
-                `Error creating directories: ${e.message}`,
-                500
-            );
-        }
-
-        // 5. Move the network files into their respective directories
-        const network1Location = path.join(
-            network1Dir,
-            `${jobData.network1Name}${jobData.extension}`
-        );
-        const network2Location = path.join(
-            network2Dir,
-            `${jobData.network2Name}${jobData.extension}`
-        );
-        console.log("Source file path:", req.files[0].path);
-        console.log("Destination file path:", network1Location);
-        try {
-            fs.mkdirSync(path.dirname(network1Location), { recursive: true });
-            fs.renameSync(req.files[0].path, network1Location);
-            // fs.unlinkSync(req.files[0].path); // test if removes old file
-        } catch (error) {
-            throw new HttpError(
-                `First file ${req.files[0].originalname} could not be moved to ${network1Location}`,
-                500
-            );
-        }
-        if (network1Name !== network2Name) {
-            try {
-                fs.mkdirSync(path.dirname(network2Location), {
-                    recursive: true,
-                });
-                fs.renameSync(req.files[1].path, network2Location);
-                // fs.unlinkSync(req.files[1].path); // test if removes old file
-            } catch (error) {
-                throw new Error(
-                    `Second file ${req.files[1].originalname} could not be moved to ${network2Location}`,
-                    500
-                );
-            }
-        }
-
-        // 6. Write job info to a JSON file
-        const statusFile = path.join(jobLocation, "info.json");
-        try {
-            fs.writeFileSync(
-                statusFile,
-                JSON.stringify({
-                    status: "preprocessed",
-                    data: jobData,
-                    options: sanitizedOptions,
-                    version: mappedSanaVersion
-                })
-            );
-            /* EXAMPLE FILE
-        {
-            "status": "preprocessed",
-            "data": {
-                "id": "fc28a1d8599304dcb89ac27929fca823",
-                "job_location": "../process/fc28a1d8599304dcb89ac27929fca823",
-                "extension": "el",
-                "network_1_name": "RNorvegicus",
-                "network_2_name": "SPombe"
-            },
-            "options": { 
-                "t": "3", 
-                "s3": "1", 
-                "ec": "0" 
-            }, 
-            "version": "SANA1.0", "SANA1.1", or "SANA2.0"
-        }
-        */
-        } catch (error) {
-            throw new HttpError(`Error writing job info to JSON file`, 500);
-        }
-
-        // 7. Return the processing state
-        res.status(200).json({ redirect: `/submit-job/${jobData.id}` });
+        const result = await createJob(req.files, sanitizedOptions, sanaVersion);
+        res.json(result);
+        // res.json({ jobId, status: "started" });
+        // console.log('result:', result);//TESTING
+        // res.json(result);
     } catch (err) {
         next(err);
     }
 };
 
-const processJob = async (req, res, next) => {
+const processController = async(req, res, next) => {
     try {
-        const jobId = req.body.id;
-        if (!jobId) {
-            throw new HttpError("No Job ID supplied.", 400);
+        const jobId = req.body.id
+        if(!jobId){
+            throw new HttpError('id field is required in request.body', 400);
         }
-        const result = await jobProcessingService(jobId);
+        const result = await jobProcess(jobId);
+        console.log('processing done');//TESTING
         const response = {
             success: result.success !== false,
             status: result.status,
             redirect: result.url,
         };
         if (result.status === "Networks are still being aligned.") {
-            const execLogFileOutput = getJobExecutionLog(jobId)
+            const execLogFileOutput = getJobExecutionLog(jobId);
             response.execLogFileOutput = execLogFileOutput;
         }
         return res.status(200).json(response);
-    } catch (err) {
-        next(err);
+    } catch (error) {
+        next(error);
     }
 };
+
+// const getJobController = async (req, res) => {
+//     try {
+//         const { jobId } = req.params;
+//         // const job = await getJob(jobId);
+//         res.json(job);
+//     } catch (error) {
+//         res.status(404).json({ error: "Job not found" });
+//     }
+// };
+
+// const lookupJobsController = async (req, res) => {
+//     try {
+//         const { query } = req.query; // Optional search parameters
+//         const jobs = await findJobs(query);
+//         res.json(jobs);
+//     } catch (error) {
+//         res.status(500).json({ error: error.message });
+//     }
+// };
+
 
 /**
  * @typedef {Object} RequestParams
@@ -338,9 +219,42 @@ const getJobResults = async (req, res, next) => {
         const infoJsonContent = fs.readFileSync(infoJsonPath, "utf8");
         const jobData = JSON.parse(infoJsonContent);
 
+
         const status = jobData.status;
+        if (status === 'failed'){
+            // Read the run.log file
+            const runLogPath = path.join(__dirname, '../process', jobId, 'run.log');
+            let runLogContent = '';
+            
+            try {
+                if (fs.existsSync(runLogPath)) {
+                    runLogContent = fs.readFileSync(runLogPath, 'utf8');
+                    // Format the log content with line breaks
+                    runLogContent = runLogContent
+                        .split('\n')
+                        .map(line => `<span>${line.trim()}</span>`)
+                        .join('\n');
+                } else {
+                    runLogContent = 'Run log file not found';
+                }
+            } catch (err) {
+                console.error('Error reading run.log:', err);
+                runLogContent = 'Error reading run log file';
+            }
+
+            throw new HttpError(
+                "The alignment of the networks failed. See execution log below:",
+                400,
+                null,
+                runLogContent
+            );
+        }
         if (status === "preprocessed" || status === "processing") {
             return res.status(200).json({ redirect: `/submit-job/${jobId}` });
+        }
+
+        if (!jobData.zipName) {
+            throw new HttpError("Invalid job data: missing zip file name.", 500);
         }
 
         // construct zip location
@@ -349,7 +263,7 @@ const getJobResults = async (req, res, next) => {
             __dirname,
             "../process",
             jobId,
-            jobData.zip_name
+            jobData.zipName
         );
 
         const execLogFilePath = path.join(jobDir, "run.log");
@@ -419,6 +333,7 @@ const getJobResults = async (req, res, next) => {
             throw new HttpError("unhalded job status", 500);
         }
     } catch (err) {
+        console.error('Error in getJobResults');//TESTING
         next(err);
     }
 };
@@ -431,9 +346,9 @@ const getJobResults = async (req, res, next) => {
 //     "execLogFileOutput": "Job execution log file does not exist."
 // }
 module.exports = {
-    getJobStatus,
+    // getJobStatus,
     downloadZipJob,
-    preprocessJob,
-    processJob,
     getJobResults,
+    submitJobController, 
+    processController,
 };

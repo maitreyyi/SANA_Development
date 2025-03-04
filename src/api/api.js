@@ -4,6 +4,7 @@ console.log(API_URL);
  * @typedef {import('../../backend/middlewares/ErrorHandler').ErrorHandler} ErrorHandler
  */
 const apiRequest = async (endpoint, options = {}, hasMultipart = false) => {
+    console.log('endpoint:', `${API_URL}/api${endpoint}`);//TESTING
     const headers = {
         ...options.headers,
     };
@@ -89,9 +90,9 @@ const api = {
             body: JSON.stringify({ id: jobId }),
         });
     },
-    getJobStatus: async (jobId) => {
-        return await apiRequest(`/jobs/${jobId}`);
-    },
+    // getJobStatus: async (jobId) => {
+    //     return await apiRequest(`/jobs/${jobId}`);
+    // },
     /**
      * @typedef {import('../../backend/controllers/jobController').ErrorMessageResponse} ErrorMessageResponse
      * @typedef {import('../../backend/controllers/jobController').ProcessedJobResponse} ProcessedJobResponse
@@ -102,7 +103,7 @@ const api = {
      * @returns {Promise<ProcessedJobResponse | ErrorMessageResponse | FailedJobResponse | ErrorResponse>}
      */
     getJobResult: async (jobId) => {
-        return await apiRequest(`/jobs/results/${jobId}`);
+        return await apiRequest(`/jobs/${jobId}`);
     },
     downloadJobZip: async (jobId) => {
         const response = await fetch(`${API_URL}/api/jobs/${jobId}/zip`);

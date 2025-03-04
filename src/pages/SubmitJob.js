@@ -77,6 +77,7 @@ const SubmitJob = () => {
                     })();
                     // console.log('allRequiredFilesExist:', allRequiredFilesExist);//TESTING
                     if (!allRequiredFilesExist) {
+                        console.log('similarityData:', similarityData)
                         alert(
                             `Please select all ${similarityData.optionalFilesCount} similarity files.`
                         );

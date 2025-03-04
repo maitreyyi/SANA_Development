@@ -1,92 +1,155 @@
-const fs = require("fs");
+// import { createHash } from "crypto";
+// import { saveJobState, getJob } from "../repositories/jobRepository";
+// import { preprocess } from "./preprocessService";
+// import { process } from "./processService";
+// import { cleanupFiles } from "../utils/fileSystem";
+// import { CONFIG } from "../config/modelOptions";
+// import path from "path";
+const { createHash } = require("crypto");
+const { saveJobState, getJob } = require("../repositories/jobRepository");
+const { preprocess } = require("./preprocessService");
+const { jobProcess } = require("./processService");
+// const { cleanupFiles } = require("../utils/fileSystem");
+const { CONFIG } = require("../config/modelOptions");
 const path = require("path");
-const HttpError = require("../middlewares/HttpError");
-/**
- * @typedef {Object} JobData
- * @property {string} id - The job ID.
- * @property {string} status - The job status.
- * @property {string} execLogFileOutput - The execution log file output.
- */
-/**
- * @typedef {Object} RedirectToResults
- * @property {boolean} redirectToResults - Indicates if the job should redirect to results.
- */
-/**
- * Gets the job data based on the job ID.
- * @param {string} id - The job ID.
- * @returns {Promise<JobData|RedirectToResults>} The job data or a redirect to results object.
- */
-const getJobData = async (id) => {
-    const jobDir = path.join(__dirname, "..", "process", id);
 
-    if (!fs.existsSync(jobDir) || !fs.lstatSync(jobDir).isDirectory()) {
-        return { redirectToResults: true };
-    }
-
-    const infoJsonPath = path.join(jobDir, "info.json");
-
-    // If info.json doesn't exist, redirect to results
-    if (!fs.existsSync(infoJsonPath)) {
-        return { redirectToResults: true };
-    }
-
-    const infoJson = JSON.parse(fs.readFileSync(infoJsonPath, "utf8"));
-    const status = infoJson.status;
-
-    if (status === "processed") {
-        return { redirectToResults: true };
-    } else if (status === "processing" || status === "preprocessed") {
-        const execLogFilePath = path.join(jobDir, "run.log");
-        let execLogFileOutput = "";
-
-        if (fs.existsSync(execLogFilePath)) {
-            try {
-                const data = fs.readFileSync(execLogFilePath, "utf8");
-                const lines = data.split("\n");
-                execLogFileOutput = lines
-                    .map((line) => `<span>${line.trim()}</span>`)
-                    .join("");
-            } catch (err) {
-                execLogFileOutput = "Problem opening execution log file.";
-            }
-        } else {
-            execLogFileOutput = "Job execution log file does not exist.";
+//     /*
+//         files: { files: Files[], similarityFiles: Files[] },
+//         options: modelOptionsSchemas[sanaVersion], // backend/config/modelOptions.js
+//         sanaVersion: Set<"SANA1" | "SANA1_1" | "SANA2">
+//     */
+const createJob = async (files, options, sanaVersion) => {
+    try {
+        if (!files?.files?.length) {
+            throw new Error('No network files provided');
+        }
+        if (files.files.length < 2) {
+            throw new Error('Two network files are required, but received: ' + files.files.length);
+        }
+    
+        const network1FullName = files.files[0].originalname;
+        const network2FullName = files.files[1].originalname;
+    
+        if (!network1FullName || !network2FullName) {
+            throw new Error('Invalid file names: both networks must have valid names');
+        }
+    
+        const network1Name = network1FullName.substring(
+            0,
+            network1FullName.lastIndexOf(".")
+        );
+        const network2Name = network2FullName.substring(
+            0,
+            network2FullName.lastIndexOf(".")
+        );
+    
+        if (!network1Name || !network2Name) {
+            throw new Error(`Failed to extract network names from files: ${network1FullName}, ${network2FullName}`);
         }
 
-        return { id, status, execLogFileOutput };
-    } else {
-        return { id, status: "unknown", execLogFileOutput: "" };
+        const timestamp = Date.now();
+        const jobId = createHash("md5")
+            .update(`${timestamp}-${network1Name}-${network2Name}`)
+            .digest("hex");
+    
+        // 3. create an object containing info about the job
+        const jobData = {
+            id: jobId,
+            status: 'preprocessing',
+            modelVersion: sanaVersion,
+            jobLocation: path.join(__dirname, "../process", jobId),
+            extension: path.extname(files.files[0].originalname).toLowerCase(),
+            network1Name: network1Name,
+            network2Name: network2Name,
+        };
+    
+        if (!jobData.extension) {
+            throw new Error(`Invalid file extension for network 1: ${files.files[0].originalname}`);
+        }
+    
+        console.log(`Created job data:`, JSON.stringify(jobData, null, 2));
+
+
+        try {
+            // Store initial job state
+            // await saveJobState(jobId, { status: "preprocessing", attempts: 1, createdAt: timestamp });
+    
+            // handle preprocessing
+            await preprocess(files, options, jobData); 
+            // await saveJobState(jobId, { 
+            //     status: "processing",
+            //     preprocessedPath,
+            // });
+            console.log('preprocessing done');//TESTING
+
+            // 7. Return the processing state
+            // res.status(200).json({ redirect: `/submit-job/${jobData.id}` });
+            return { redirect: `/submit-job/${jobData.id}` };
+    
+            // // handle processing
+            // const result = await jobProcess(jobId, jobData);
+            // console.log('processing done');//TESTING
+            // console.log('result:', result);//TESTING
+            // await saveJobState(jobId, {
+            //     status: "complete",
+            //     result,
+            //     // ...(CONFIG.CLEANUP_ON_COMPLETE && { preprocessedPath: undefined }),
+            // });
+    
+            // if (CONFIG.CLEANUP_ON_COMPLETE) {
+            //     await cleanupFiles(preprocessedPath);
+            // }
+        } catch (error) {
+            // await saveJobState(jobId, {
+            //     status: "error",
+            //     error: error.message,
+            //     preprocessedPath:
+            //         error.stage === "processing"
+            //             ? `${CONFIG.PREPROCESSED_DIR}/${jobId}`
+            //             : undefined,
+            // });
+            throw error;
+        }
+    } catch (error) {
+        throw new Error(`Error creating job object: ${error.message}`);
     }
 };
 
-const getJobExecutionLog = (jobId) => {
-    const jobDir = path.join(__dirname, "../process", jobId);
+const retryProcessing = async (jobId) => {
+    const job = await getJob(jobId);
 
-    if (!fs.existsSync(jobDir) || !fs.lstatSync(jobDir).isDirectory()) {
-        throw new HttpError(
-            "Sorry: no such result Job ID exists. Please try another Job ID.",
-            404
+    if (!job.preprocessedPath) {
+        throw new Error(
+            "No preprocessed files available. Need to start from beginning."
         );
     }
 
-    const execLogFilePath = path.join(jobDir, "run.log");
-    let execLogFileOutput = "";
-
-    if (fs.existsSync(execLogFilePath)) {
-        try {
-            const execLogFileContent = fs.readFileSync(execLogFilePath, "utf8");
-            const lines = execLogFileContent.split("\n");
-            execLogFileOutput = lines
-                .map((line) => `<span>${line.trim()}</span>`)
-                .join("");
-        } catch (err) {
-            execLogFileOutput = "Problem opening execution log file.";
-        }
-    } else {
-        execLogFileOutput = "Job execution log file does not exist.";
+    if (job.attempts >= CONFIG.MAX_ATTEMPTS) {
+        throw new Error("Maximum retry attempts reached");
     }
 
-    return execLogFileOutput;
+    try {
+        await saveJobState(jobId, {
+            status: "processing",
+            attempts: job.attempts + 1,
+        });
+
+        const result = await jobProcess(job.preprocessedPath);
+        await saveJobState(jobId, {
+            status: "complete",
+            result,
+        });
+    } catch (error) {
+        await saveJobState(jobId, {
+            status: "error",
+            error: error.message,
+        });
+        throw error;
+    }
 };
 
-module.exports = { getJobData, getJobExecutionLog };
+module.exports = {
+    createJob, 
+    retryProcessing, 
+    getJob
+};

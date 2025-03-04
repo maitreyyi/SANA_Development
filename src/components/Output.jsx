@@ -36,7 +36,7 @@ const Output = ({ jobId, isFinished }) => {
     const fetchJobData = useCallback(async () => {
         try {
             const data = await api.getJobResult(jobId);
-            console.log(data); //TESTING
+            console.log('api.getjobresult:', data); //TESTING
             if (data.error) {
                 setError({
                     message: data.message,
@@ -62,7 +62,7 @@ const Output = ({ jobId, isFinished }) => {
             if(data.success && data.status === 'Networks already aligned.'){
                 navigate(`/lookup-job/${jobId}`);
             }
-            console.log(data); //TESTING
+            console.log('fetchProcess data:', data); //TESTING
             if (data.error) {
                 setError({
                     message: data.message,

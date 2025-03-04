@@ -9,6 +9,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Results from "./pages/Results";
 import LoginForm from "./pages/LoginForm";
+import { JobSubmissionProvider } from "./context/JobSubmissionContext";
 
 function App() {
   return (
@@ -19,9 +20,14 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path = "/login" element={<LoginForm />} />
-            <Route path="/submit-job" element={<SubmitJob />} />
+            <Route path="/submit-job" element={
+              <JobSubmissionProvider>
+                <SubmitJob/>
+              </JobSubmissionProvider>
+              } 
+            />
             <Route path="/submit-job/:id" element={<ProcessingJob />} />
-            <Route exact="/lookup-job" element={<LookupJob />} />
+            <Route path="/lookup-job" element={<LookupJob />} />
             <Route path="/lookup-job/:id" element={<Results />} />
             <Route path="/contact" element={<Contact />} />
           </Routes>

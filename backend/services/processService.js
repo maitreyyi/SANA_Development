@@ -3,36 +3,9 @@ const path = require("path");
 const HttpError = require("../middlewares/HttpError");
 const { exec } = require("child_process");
 const archiver = require("archiver");
+const { SANA_MODELS, SANA_LOCATIONS, validateSanaVersion } = require('../config/modelOptions');
 
-const SANA1_0 = process.env.SANA_LOCATION_1_0;
-const SANA1_1 = process.env.SANA_LOCATION_1_1;
-const SANA2_0 = process.env.SANA_LOCATION_2_0;
-
-const jobProcessingService = async (jobId, sanaVersion = "sana1.0") => {
-    // major error: no sana models allocated
-    if (typeof SANA1_0 === "undefined") {
-        throw new HttpError("SANA_LOCATION_1_0 is not defined");
-    }
-    if (typeof SANA1_1 === "undefined") {
-        throw new HttpError("SANA_LOCATION_1_1 is not defined");
-    }
-    if (typeof SANA2_0 === "undefined") {
-        throw new HttpError("SANA_LOCATION_2_0 is not defined");
-    }
-
-    const currentSana = (() => {
-        switch (sanaVersion) {
-            case "sana1.0":
-                return SANA1_0;
-            case "sana1.1":
-                return SANA1_1;
-            case "sana2.0":
-                return SANA2_0;
-            default:
-                throw new HttpError("Invalid sanaVersion specified");
-        }
-    })();
-
+const jobProcess = async (jobId) => {
     // Step 1: Check that there is an id supplied - done in controller
     const jobDir = path.join(__dirname, "../process", jobId);
 
@@ -67,44 +40,19 @@ const jobProcessingService = async (jobId, sanaVersion = "sana1.0") => {
     fs.writeFileSync(infoFilePath, JSON.stringify(info));
 
     // Step 4: Generate the command string
-    /*
-            const jobData = {
-                id: jobId,
-                jobLocation: path.join(__dirname, "../process", jobId),
-                extension: path.extname(req.files[0].originalname).toLowerCase(),
-                network1Name: network1Name,
-                network2Name: network2Name,
-            };
-        */
     let optionString = "";
-    const { id, jobLocation, extension, network1Name, network2Name } =
+    const { id, jobLocation, extension, network1Name, network2Name, modelVersion } =
         info.data;
-    // console.log("info.data:", {
-    //     id,
-    //     jobLocation,
-    //     extension,
-    //     network1Name,
-    //     network2Name,
-    // });
     const { options } = info;
     // console.log("shape of info", info); //TESTING
 
-    // shape of info {
-    //     status: 'processing',
-    //     data: {
-    //       id: '2a70487c5a231f34d7433386b9b9aebf',
-    //       jobLocation: '/Users/jj/projects/uci/research/SANA_Development/backend/process/2a70487c5a231f34d7433386b9b9aebf',
-    //       extension: '.gw',
-    //       network1Name: 'yeast',
-    //       network2Name: 'yeast'
-    //     },
-    //     options: { t: 3, s3: 1, ec: 0 }
-    //   }
+    validateSanaVersion(modelVersion);
+    const sanaLocation = SANA_LOCATIONS[modelVersion];
 
     //EDIT SANA LOCATION HERE IF NEEDED
-    optionString += `cd ${jobLocation} && ${currentSana} `;
+    optionString += `cd ${jobLocation} && ${sanaLocation} `;
 
-    if (extension === "el") {
+    if (extension === ".el") {
         optionString += `-fg1 networks/${network1Name}/${network1Name}.el `;
         optionString += `-fg2 networks/${network2Name}/${network2Name}.el `;
     } else {
@@ -116,9 +64,32 @@ const jobProcessingService = async (jobId, sanaVersion = "sana1.0") => {
     optionString += "-tdecay auto ";
 
     // Append SANA execution options
-    for (const [option, value] of Object.entries(options)) {
+    for (const [option, value] of Object.entries(options.standard)) {
         optionString += ` -${option} ${value} `;
     }
+
+    if (modelVersion === SANA_MODELS.SANA2) {
+        const esim = options.advanced?.esim;
+        if (esim && esim.length > 0) {
+            const numFiles = esim.length;
+            // Add external similarity weights (-esim)
+            optionString += `-esim ${numFiles} `;
+            // Add all weights
+            optionString += `${esim.join(' ')} `;
+            // Add similarity filenames (-simFile)
+            optionString += `-simFile ${numFiles} `;
+            // Add paths to all similarity files
+            for (let i = 0; i < numFiles; i++) {
+                optionString += `similarityFiles/sim_${i} `;
+            }
+            // Add similarity formats (-simFormat)
+            optionString += `-simFormat ${numFiles} `;
+            // Add format '1' (node names) for each file
+            optionString += `${Array(numFiles).fill('1').join(' ')} `;
+        }
+    }
+    console.log('optionstring!:', optionString);//TESTING
+
     // Step 5: Run the script
     // return promise hereee????
     return new Promise((resolve, reject) => {
@@ -138,26 +109,45 @@ const jobProcessingService = async (jobId, sanaVersion = "sana1.0") => {
                         success: false,
                         status: "Networks could not be aligned.",
                         redirect: `/lookup-job/${jobId}`,
-                    }); // or redirect to `/lookup-job`
-                    // return res.status(200).json({
-                    //     success: false,
-                    //     status: "Networks could not be aligned.",
-                    //     data: { url: `/results?query=${id}` },
-                    // });
+                    }); 
                 } else {
                     // Execution succeeded
                     // Step 6: Create a zip for the files
                     const zipName = `SANA_alignment_output_${id}.zip`;
-                    const output = fs.createWriteStream(
-                        path.join(jobLocation, zipName)
-                    );
+                    const zipPath = path.join(jobLocation, zipName);
+                    const output = fs.createWriteStream(zipPath);
                     const archive = archiver("zip", { zlib: { level: 9 } });
+                    archive.on("entry", function(entry) {
+                        console.log("Adding to zip:", entry.name);
+                    });
+                    output.on("pipe", () => {
+                        console.log("Pipe started");
+                    });
+                    archive.on("warning", function(err) {
+                        console.warn("Warning during zip creation:", err);
+                        if (err.code === "ENOENT") {
+                            console.warn("File not found while zipping");
+                        } else {
+                            reject(err);
+                        }
+                    });
+                    archive.on("error", (err) => {
+                        console.error("Error during zip creation:", err);
+                        reject(err);
+                    });
 
                     output.on("close", () => {
+                        console.log(`Zip file created at ${zipPath}`);
+                        console.log(`Zip file size: ${archive.pointer()} bytes`);
+                        if (!fs.existsSync(zipPath)) {
+                            console.error("Zip file was not created!");
+                            reject(new Error("Zip file creation failed"));
+                            return;
+                        }
                         // Step 7: Update info.json with status 'processed'
                         const successInfo = {
                             status: "processed",
-                            zip_name: zipName,
+                            zipName: zipName,
                             command: optionString,
                         };
                         fs.writeFileSync(
@@ -170,13 +160,14 @@ const jobProcessingService = async (jobId, sanaVersion = "sana1.0") => {
                             redirect: `/lookup-job/${jobId}`,
                         });
                     });
-
-                    archive.on("error", (err) => {
-                        reject(err);
-                    });
-
+                    
                     archive.pipe(output);
-                    archive.directory(jobLocation, false);
+                    // archive.directory(jobLocation, false);
+                    archive.glob('**/*', {
+                        cwd: jobLocation,
+                        ignore: [zipName], 
+                        dot: true 
+                    });
                     archive.finalize();
                 }
             }
@@ -185,5 +176,5 @@ const jobProcessingService = async (jobId, sanaVersion = "sana1.0") => {
 };
 
 module.exports = {
-    jobProcessingService,
+    jobProcess,
 };

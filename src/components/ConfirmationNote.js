@@ -1,8 +1,8 @@
 import AlignmentOptions from "./AlignmentOptions";
-import PropTypes from "prop-types";
 import Note from "./Note";
+import { useJobSubmission } from "../context/JobSubmissionContext";
 
-const ConfirmationNote = ({ handleOptionChange, options }) => {
+const ConfirmationNote = () => {
     return (
         <div>
             <Note>
@@ -20,21 +20,10 @@ const ConfirmationNote = ({ handleOptionChange, options }) => {
                 </ul>
             </Note>
             <AlignmentOptions
-                handleOptionChange={handleOptionChange}
-                options={options}
                 fixed
             />
         </div>
     );
-};
-
-ConfirmationNote.propTypes = {
-    handleOptionChange: PropTypes.func,
-    options: PropTypes.shape({
-        runtimeInMinutes: PropTypes.number.isRequired,
-        s3Weight: PropTypes.number.isRequired,
-        ecWeight: PropTypes.number.isRequired,
-    }).isRequired,
 };
 
 export default ConfirmationNote;

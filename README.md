@@ -1,70 +1,58 @@
-# Getting Started with Create React App
+# SANA Web Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Overview
 
-## Available Scripts
+SANA is a web application designed to provide an intuitive and efficient interface for users to submit and manage tasks. It features a modern React-based frontend and an Express.js backend, ensuring a seamless user experience with robust API handling.
 
-In the project directory, you can run:
+### Features
 
-### `npm start`
+1. User Authentication: Secure login and session management.
+2. Task Submission: Users can submit jobs through a dedicated interface.
+3. Job Management: View and track submitted jobs.
+4. API Integration: Backend logic to handle task processing and data retrieval.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Tech Stack
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+1. Frontend:
 
-### `npm test`
+  a.React.js (with Vite for fast development)
+  b.Tailwind CSS for styling
+  c.React Router for navigation
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. Backend:
+   a. Express.js (Node.js framework)
+   b. JWT-based authentication
 
-### `npm run build`
+### Installation and Setup
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+#### Prerequisites:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Node.js (>=16)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+npm or yarn package manager
 
-### `npm run eject`
+#### Steps:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+1. Clone the repository: git clone https://github.com/your-repo/sana.git --> cd sana
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2. Install dependencies: npm install
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+3. Set up environment variables: Create a .env file in the root directory and configure: JWT_SECRET=your_secret_key
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Run the application:
 
-## Learn More
+npm start
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+#### API Endpoints
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+#### Authentication
 
-### Code Splitting
+POST /api/auth/login - User login
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+POST /api/auth/register - User registration
 
-### Analyzing the Bundle Size
+#### Jobs
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+POST /api/jobs/submit - Submit a new job
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+GET /api/jobs - Fetch submitted jobs

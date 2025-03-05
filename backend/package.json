@@ -4,26 +4,52 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "build": "cd .. && npm run build && cd backend",
+    "build:": "tsc",
+    "pre:build": "cd .. && npm run build && cd backend",
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "tsx src/index.ts",
+    "lint": "eslint src/**/*.ts",
+    "format": "eslint src/**/*.ts --fix"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "archiver": "^7.0.1",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^4.21.1",
+    "express": "^4.21.2",
     "express-session": "^1.18.1",
     "multer": "^1.4.5-lts.1",
-    "sqlite3": "^5.1.7",
-    "zod": "^3.24.1",
+    "papaparse": "^5.5.2",
     "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0"
+    "passport-google-oauth20": "^2.0.0",
+    "sqlite3": "^5.1.7",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "nodemon": "^3.1.7"
+    "@types/archiver": "^6.0.3",
+    "@types/bcrypt": "^5.0.2",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/express-session": "^1.18.1",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.13.9",
+    "@types/papaparse": "^5.3.15",
+    "@types/passport": "^1.0.17",
+    "@types/passport-google-oauth20": "^2.0.16",
+    "@typescript-eslint/eslint-plugin": "^8.26.0",
+    "@typescript-eslint/parser": "^8.26.0",
+    "eslint": "^9.21.0",
+    "husky": "^9.1.7",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm lint"
+    }
   }
 }

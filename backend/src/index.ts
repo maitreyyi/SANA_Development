@@ -1,24 +1,24 @@
+import 'dotenv-safe/config';
+import '../types/types';
 import path from 'path';
-import dotenv from 'dotenv';
-console.log('Looking for .env at:', path.resolve(__dirname, '../../.env'));
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import express from 'express';
-import bodyParser from 'body-parser';
 import ErrorHandler from './middlewares/ErrorHandler';
 import cors from 'cors';
-import session from 'express-session';
-import passport from './services/auth'; // You'll need to create this file
-import authRoutes from './routes/authRoutes'; // You'll need to create this file
+import logger from 'morgan';
+import cookieParser from 'cookie-parser';
+import authRoutes from './routes/authRoutes';
 import jobRoutes from './routes/jobRoutes';
+import { authenticatedRateLimit, publicRateLimit } from './middlewares/rateLimiter';
+
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 // cors and bodyparser middleware
 if (process.env.NODE_ENV === 'development') {
     app.use(
         cors({
-            origin: '*',
+            origin: 'http://localhost:5173',
         }),
     );
 
@@ -27,18 +27,19 @@ if (process.env.NODE_ENV === 'development') {
         console.log('test');
         res.send('hello!');
     });
+    app.use(logger('dev'));
 }
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(cookieParser());
 
-// Session management for Google OAuth
-app.use(session({
-    secret: 'your_secret_key', // CHANGE THIS
-    saveUninitialized: true,
-}));
-app.use(passport.initialize());
-app.use(passport.session());
+// Public API routes with basic rate limiting
+// app.use('/api/public', publicRateLimit, publicRoutes);
+
+// Protected routes with higher rate limits
+// app.use('/api/protected', requireAuth, authenticatedRateLimit, protectedRoutes);
 
 // api routes
+// app.use('/api/auth', publicRateLimit, authRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 

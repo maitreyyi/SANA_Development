@@ -1,62 +1,78 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
 import Button from "../components/Button";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+// import { API_URL } from '../api/api';
+import { useState } from "react";
+import { useAuth } from "../context/authContext";
+import { useNavigate } from "react-router";
+
+const registerSchema = z.object({
+    first_name: z.string()
+        .min(1, { message: "First name is required" })
+        .max(50, { message: "First name must be less than 50 characters" }),
+    last_name: z.string()
+        .min(1, { message: "Last name is required" })
+        .max(50, { message: "Last name must be less than 50 characters" }),
+    email: z.string()
+        .min(1, { message: "Email is required" })
+        .email({ message: "Invalid email address" }),
+    password: z.string()
+        .min(6, { message: "Password must be at least 6 characters" }),
+    confirmPassword: z.string()
+        .min(1, { message: "Please confirm your password" }),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+});
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const RegisterForm = () => {
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [serverError, setServerError] = useState<string>("");
+    const { signup, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<RegisterFormValues>({
+        resolver: zodResolver(registerSchema),
+        defaultValues: {
+            first_name: "",
+            last_name: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+        },
+    });
 
-    // Handle Google Register Redirect
-    const handleGoogleRegister = () => {
-        window.location.href = "http://localhost:4000/api/auth/google"; // Redirect to backend OAuth
-    };
 
-    // Handle Form Submission
-    const handleRegister = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
-        
-        if (password !== confirmPassword) {
-            setError("Passwords do not match.");
-            return;
-        }
-
+    const onSubmit = async (data: RegisterFormValues) => {
         setIsSubmitting(true);
+        setServerError("");
 
         try {
-            const response = await fetch("http://localhost:4000/api/auth/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ firstName, lastName, email, password }),
-            });
-            const data = await response.json();
-
-            if (response.ok) {
-                localStorage.setItem("apiKey", data.apiKey);
-                navigate("/dashboard"); // Redirect to dashboard
-            } else {
-                setError(data.message || "Registration failed.");
+            const { isConfirmed, email } = await signup(data);
+            if (!isConfirmed) {
+                // User needs to verify email
+                navigate('/verification-pending', { 
+                    state: { email } 
+                });
             }
         } catch (error) {
-            //onsole.error("Registration error:", error);
-            setError((error as Error).message);
+            setServerError((error as Error).message);
+        } finally {
+            setIsSubmitting(false);
         }
-
-        setIsSubmitting(false);
     };
 
     return (
         <div className="flex h-screen items-center justify-center w-full px-4">
             <div className="flex flex-col w-full max-w-lg bg-white shadow-2xl rounded-2xl overflow-hidden p-8">
-                
                 {/* Register Heading */}
                 <div className="w-full flex flex-col items-center justify-center">
                     <h2 className="text-3xl font-bold text-blue-700">Register</h2>
@@ -65,8 +81,9 @@ const RegisterForm = () => {
                 {/* Register with Google */}
                 <div className="w-full mt-6">
                     <Button 
-                        onClick={handleGoogleRegister} 
-                        className="w-full flex items-center justify-center bg-red-500 hover:bg-red-600 text-white text-lg py-3 rounded-lg shadow-md transition duration-300">
+                        onClick={loginWithGoogle} 
+                        className="w-full flex items-center justify-center bg-red-500 hover:bg-red-600 text-white text-lg py-3 rounded-lg shadow-md transition duration-300"
+                    >
                         <FontAwesomeIcon icon={faGoogle} className="w-5 h-5 mr-3" />
                         Register with Google
                     </Button>
@@ -79,69 +96,96 @@ const RegisterForm = () => {
                     <hr className="w-1/3 border-gray-300"/>
                 </div>
 
-                {/* Error Message */}
-                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                {/* Server Error Message */}
+                {serverError && (
+                    <p className="text-red-500 text-sm text-center mb-4">{serverError}</p>
+                )}
 
                 {/* Form Fields */}
-                <form onSubmit={handleRegister} className="w-full">
+                <form onSubmit={handleSubmit(onSubmit)} className="w-full">
                     <div className="w-full">
                         <label className="text-sm font-medium text-gray-700">First name</label>
                         <input 
-                            type="text" 
-                            className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                            type="text"
+                            className={`w-full px-4 py-2 mt-2 border ${
+                                errors.first_name
+                                ? "border-red-500 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-400"
+                            } rounded-lg focus:outline-none focus:ring-2`}
                             placeholder="Enter your first name"
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
-                            required
+                            {...register("first_name")}
                         />
+                        {errors.first_name && (
+                            <p className="mt-1 text-sm text-red-600">{errors.first_name.message}</p>
+                        )}
                     </div>
 
                     <div className="w-full mt-3">
                         <label className="text-sm font-medium text-gray-700">Last name</label>
                         <input 
-                            type="text" 
-                            className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                            type="text"
+                            className={`w-full px-4 py-2 mt-2 border ${
+                                errors.last_name
+                                ? "border-red-500 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-400"
+                            } rounded-lg focus:outline-none focus:ring-2`}
                             placeholder="Enter your last name"
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
-                            required
+                            {...register("last_name")}
                         />
+                        {errors.last_name && (
+                            <p className="mt-1 text-sm text-red-600">{errors.last_name.message}</p>
+                        )}
                     </div>
 
                     <div className="w-full mt-3">
                         <label className="text-sm font-medium text-gray-700">Email</label>
                         <input 
-                            type="email" 
-                            className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                            type="email"
+                            className={`w-full px-4 py-2 mt-2 border ${
+                                errors.email
+                                ? "border-red-500 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-400"
+                            } rounded-lg focus:outline-none focus:ring-2`}
                             placeholder="Enter your email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
+                            {...register("email")}
                         />
+                        {errors.email && (
+                            <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                        )}
                     </div>
 
                     <div className="w-full mt-3">
                         <label className="text-sm font-medium text-gray-700">Password</label>
                         <input 
-                            type="password" 
-                            className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                            type="password"
+                            className={`w-full px-4 py-2 mt-2 border ${
+                                errors.password
+                                ? "border-red-500 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-400"
+                            } rounded-lg focus:outline-none focus:ring-2`}
                             placeholder="Enter your password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
+                            {...register("password")}
                         />
+                        {errors.password && (
+                            <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                        )}
                     </div>
 
                     <div className="w-full mt-3">
                         <label className="text-sm font-medium text-gray-700">Confirm Password</label>
                         <input 
-                            type="password" 
-                            className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                            type="password"
+                            className={`w-full px-4 py-2 mt-2 border ${
+                                errors.confirmPassword
+                                ? "border-red-500 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-400"
+                            } rounded-lg focus:outline-none focus:ring-2`}
                             placeholder="Re-enter your password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
+                            {...register("confirmPassword")}
                         />
+                        {errors.confirmPassword && (
+                            <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                        )}
                     </div>
 
                     {/* Submit Button */}
@@ -154,6 +198,11 @@ const RegisterForm = () => {
                             {isSubmitting ? "Registering..." : "Submit"}
                         </Button>
                     </div>
+
+                    {/* Sign In Link */}
+                    <p className="mt-4 text-center text-gray-600 text-sm">
+                        Already have an account? <a href="/login" className="text-blue-500 hover:underline">Sign in</a>
+                    </p>
                 </form>
             </div>
         </div>

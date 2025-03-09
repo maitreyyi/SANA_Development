@@ -1,48 +1,63 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import Button from "../components/Button";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useAuth } from "../context/authContext";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import LoadingSpinner from "../components/Loader";
+
+const loginSchema = z.object({
+    email: z
+      .string()
+      .min(1, { message: "Email is required" })
+      .email({ message: "Invalid email address" }),
+    password: z
+      .string()
+      .min(1, { message: "Password is required" })
+      .min(6, { message: "Password must be at least 6 characters" }),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
 
 const LoginForm = () => {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
     const navigate = useNavigate();
+    const { login, user, isLoading, loginWithGoogle } = useAuth();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+      } = useForm<LoginFormValues>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+          email: "",
+          password: "",
+        },
+      });
 
-    // Handle Google OAuth Redirect
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (token) {
-            navigate("/dashboard"); // Redirect if already logged in
+        if (user) {
+            navigate("/dashboard"); 
         }
-    }, [navigate]);
+    }, [user, navigate]);
 
-    // Handle Google Login
-    const handleGoogleLogin = () => {
-        window.location.href = "http://localhost:4000/api/auth/google"; // Redirect to backend OAuth
-    };
 
-    // Handle Email/Password Login
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
+
+    const onSubmit = async (data: LoginFormValues) => {
         try {
-            const response = await fetch("http://localhost:4000/api/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await response.json();
-            if (data.success) {
-                localStorage.setItem("token", data.token); // Store authentication token
-                navigate("/dashboard"); // Redirect to dashboard
-            } else {
-                alert("Login failed: " + data.message);
-            }
+          await login(data.email, data.password);
         } catch (error) {
-            console.error("Login error:", error);
+          alert("Login failed: " + (error as Error).message);
         }
-    };
+      };
+    
+
+    if (isLoading) {
+        return <LoadingSpinner message="Signing you in..." />;
+    }
 
     return (
         <div className="flex h-screen items-center justify-center w-full px-4">
@@ -57,7 +72,7 @@ const LoginForm = () => {
                 {/* Sign In with Google */}
                 <div className="w-full mt-6">
                     <Button 
-                        onClick={handleGoogleLogin} 
+                        onClick={loginWithGoogle} 
                         className="w-full flex items-center justify-center bg-red-500 hover:bg-red-600 text-white text-lg py-3 rounded-lg shadow-md transition duration-300">
                         <FontAwesomeIcon icon={faGoogle} className="w-5 h-5 mr-3" />
                         Sign in with Google
@@ -72,29 +87,38 @@ const LoginForm = () => {
                 </div>
 
                 {/* Email & Password Fields */}
-                <form onSubmit={handleLogin} className="w-full">
+                <form onSubmit={handleSubmit(onSubmit)} className="w-full">
                     <div>
                         <label className="text-sm font-medium text-gray-700">Email</label>
-                        <input 
-                            type="email" 
-                            className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" 
-                            placeholder="Enter your email" 
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
+                        <input
+                            type="email"
+                            className={`w-full px-4 py-2 mt-2 border ${
+                                errors.email
+                                ? "border-red-500 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-400"
+                            } rounded-lg focus:outline-none focus:ring-2`}
+                            placeholder="Enter your email"
+                            {...register("email")}
                         />
                     </div>
 
                     <div className="w-full mt-3">
                         <label className="text-sm font-medium text-gray-700">Password</label>
-                        <input 
-                            type="password" 
-                            className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" 
-                            placeholder="Enter your password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
+                        <input
+                        type="password"
+                        className={`w-full px-4 py-2 mt-2 border ${
+                            errors.password
+                            ? "border-red-500 focus:ring-red-400"
+                            : "border-gray-300 focus:ring-blue-400"
+                        } rounded-lg focus:outline-none focus:ring-2`}
+                        placeholder="Enter your password"
+                        {...register("password")}
                         />
+                        {errors.password && (
+                        <p className="mt-1 text-sm text-red-600">
+                            {errors.password.message}
+                        </p>
+                        )}
                     </div>
 
                     {/* Forgot Password */}

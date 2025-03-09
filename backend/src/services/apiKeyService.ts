@@ -1,195 +1,195 @@
-/*
-  Helper functions to manage users and API keys in sqlite database.
-*/
-
 import crypto from 'crypto';
 import db from '../config/database';
-import bcrypt from 'bcrypt';
-import { LoginResult, User } from '../../types/types';
+import { UserRecord, JobStatus, JobData } from '../../types/types';
+import HttpError from '../middlewares/HttpError';
 
-
+/**
+ * API Key Management
+ */
 const generateApiKey = (): string => {
     return crypto.randomBytes(32).toString('hex');
 };
 
 const checkApiKeyExists = async (apiKey: string): Promise<boolean> => {
-    const row = await db.get('SELECT 1 FROM users WHERE api_key = ? LIMIT 1', [apiKey]);
-    return row !== undefined;
-};
-
-const userLogin = async (email: string, password: string): Promise<LoginResult> => {
-    try {
-        // Check if user exists
-        const exists = await userExists(email);
-        if (!exists) {
-            console.log('Login failed: User not found');
-            return { success: false, message: 'User not found.' };
-        }
-        console.log('Login: User found');
-
-        // Fetch the user's hashed password from the database
-        return new Promise((resolve, reject) => {
-            db.get('SELECT * FROM users WHERE email = ?', [email], async (err: Error, user: User) => {
-                if (err) {
-                    console.error('Database error:', err);
-                    return reject({ success: false, message: 'Database error.' });
-                }
-
-                if (!user) {
-                    return resolve({ success: false, message: 'User not found.' });
-                }
-
-                // If user has a Google ID, no password verification is needed
-                if (user.google_id) {
-                    console.log('Google user authenticated.');
-                    return resolve({ success: true, message: 'Google user authenticated.', user });
-                }
-                console.log('Checked isMatch: ', user);
-
-                // Verify password for manual users
-                const isMatch = await bcrypt.compare(password, user.password || '');
-
-                if (!isMatch) {
-                    console.log('Login failed: Incorrect password');
-                    return resolve({ success: false, message: 'Invalid credentials.' });
-                }
-
-                console.log('Login successful.');
-                return resolve({ success: true });
-            });
-        });
-    } catch (error) {
-        console.error('Login error:', error);
-        return { success: false, message: 'Internal server error.' };
-    }
-};
-
-const userExists = async (email: string): Promise<boolean> => {
     return new Promise((resolve, reject) => {
-        db.get('SELECT email FROM users WHERE email = ? LIMIT 1', [email], (err: Error | null, row: any) => {
-            if (err) {
-                console.error('Database error:', err);
-                reject(err);
-            } else if (row === undefined) {
-                console.log('No row found with email: ', email);
-                return resolve(false);
-            } else {
-                console.log('Row found:', row);
-                return resolve(true);
-            }
-        });
-    });
-};
-
-// console.log("row type:", typeof row);
-// console.log("row properties:", Object.getOwnPropertyNames(row));
-// console.log("row stringified:", JSON.stringify(row));
-// console.log("row full inspection:", require('util').inspect(row, {depth: null, showHidden: true}));
-// return row !== undefined;
-// console.log('row: ', row);
-// return JSON.stringify(row) != "{}";
-// };
-
-const generateUniqueApiKey = async (): Promise<string> => {
-    let apiKey: string;
-    let exists: boolean;
-
-    do {
-        // if generated API key is not unique, keep generating until it is
-        apiKey = generateApiKey();
-        exists = await checkApiKeyExists(apiKey);
-    } while (exists);
-
-    return apiKey;
-};
-
-interface UserCreateResult {
-    id: number;
-    email: string;
-    apiKey: string;
-}
-
-const createUser = async (
-    googleID: string | null,
-    email: string,
-    first_name: string | null,
-    last_name: string | null,
-    password: string | null,
-): Promise<UserCreateResult> => {
-    const apiKey = await generateUniqueApiKey();
-    // console.log('Attempting to insert with values:', {
-    //     googleID,
-    //     email,
-    //     apiKey,
-    //     types: {
-    //         googleID: typeof googleID,
-    //         email: typeof email,
-    //         apiKey: typeof apiKey
-    //     },
-    //     lengths: {
-    //         googleID: googleID.length,
-    //         email: email.length,
-    //         apiKey: apiKey.length
-    //     }
-    // });
-
-    return new Promise((resolve, reject) => {
-        db.run(
-            'INSERT INTO users (google_id, email, first_name, last_name, password, api_key) VALUES (?, ?, ?, ?, ?, ?)',
-            [googleID || null, email, first_name || null, last_name || null, password || null, apiKey],
-            function (this: { lastID: number }, err: Error | null) {
+        db.get(
+            'SELECT 1 FROM users WHERE api_key = ? LIMIT 1',
+            [apiKey],
+            (err: Error | null, row: any) => {
                 if (err) {
-                    console.error('Database error:', err.message);
+                    console.error('Error checking API key:', err);
                     reject(err);
-                    return;
                 }
-                resolve({ id: this.lastID, email, apiKey });
+                resolve(row !== undefined);
             },
         );
     });
 };
 
-// const createUser = async (googleID, email) => {
-//     const apiKey = await generateUniqueApiKey();
-//     console.log(typeof(apiKey));
-//     console.log(typeof(googleID));
-//     console.log(typeof(email));
-//     // INSERT INTO users (id, email, api_key) VALUES ('google_id', 'user@example.com', 'api_key_value');
+const generateUniqueApiKey = async (): Promise<string> => {
+    let apiKey: string;
+    let exists: boolean;
+    let attempts = 0;
+    const maxAttempts = 5;
 
-//     return new Promise((resolve, reject) => {
-//       db.run(
-//         'INSERT INTO users (id, email, api_key) VALUES (?, ?, ?)',
-//         [googleID, email, apiKey],
-//         function(err) {
-//           if (err) reject(err);
-//           resolve({ id: this.lastID, email, apiKey });
-//         }
-//       );
-//     });
-// };
-const validateApiKey = async (apiKey: string): Promise<User> => {
+    do {
+        apiKey = generateApiKey();
+        // console.log('Generated new API key attempt:', attempts + 1);
+        try {
+            exists = await checkApiKeyExists(apiKey);
+            // console.log('API key exists?:', exists);
+        } catch (error) {
+            console.error('Error checking API key:', error);
+            throw HttpError.internal('Failed to generate unique API key');
+        }
+        attempts++;
+
+        if (attempts >= maxAttempts && exists) {
+            throw HttpError.internal('Failed to generate unique API key after maximum attempts');
+        }
+    } while (exists);
+
+    console.log('Successfully generated unique API key');
+    return apiKey;
+};
+
+const getUserByApiKey = async (apiKey: string): Promise<UserRecord | null> => {
     return new Promise((resolve, reject) => {
-        db.get('SELECT * FROM users WHERE api_key = ?', [apiKey], (err: Error | null, row: User) => {
-            if (err) reject(err);
-            if (!row) {
-                reject(new Error('Invalid API key'));
+        db.get('SELECT * FROM users WHERE api_key = ?', [apiKey], (err: Error | null, row: any) => {
+            if (err) {
+                console.error('Error fetching user by API key:', err);
+                return reject(err);
             }
+            if (!row) {
+                return resolve(null);
+            }
+            // Ensure all required User fields are present
+            if (!row.id || !row.email || !row.api_key) {
+                console.error('Invalid user data in database:', row);
+                return reject(new Error('Invalid user data'));
+            }
+            resolve(row as UserRecord);
+        });
+    });
+};
+
+/**
+ * Job Management
+ */
+const createJob = async (userId: string, jobId: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        db.run(
+            'INSERT INTO jobs (id, user_id, status) VALUES (?, ?, "preprocessing")',
+            [jobId, userId],
+            (err: Error | null) => {
+                if (err) return reject(err);
+                resolve();
+            },
+        );
+    });
+};
+
+const updateJobStatus = async (
+    jobId: string,
+    status: JobStatus,
+    result?: any,
+    error?: string,
+): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        let serializedResult: string | null = null;
+        if (result) {
+            try {
+                serializedResult = JSON.stringify(result);
+            } catch (e) {
+                console.error('Failed to serialize job result:', e);
+                return reject(new Error('Invalid job result data'));
+            }
+        }
+
+        db.run(
+            'UPDATE jobs SET status = ?, result = ?, error = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [status, serializedResult, error, jobId],
+            (err: Error | null) => {
+                if (err) {
+                    console.error('Error updating job status:', err);
+                    return reject(err);
+                }
+                resolve();
+            },
+        );
+    });
+};
+
+const getJobStatus = async (jobId: string): Promise<JobData | null> => {
+    return new Promise((resolve, reject) => {
+        db.get('SELECT * FROM jobs WHERE id = ?', [jobId], (err: Error | null, row: JobData) => {
+            if (err) return reject(err);
+            if (!row) return resolve(null);
+
+            // Parse result if exists
+            if (row.result) {
+                try {
+                    row.result = JSON.parse(row.result);
+                } catch (e) {
+                    console.warn(`Failed to parse job result for job ${jobId}`);
+                }
+            }
+
             resolve(row);
         });
     });
 };
 
-const getCurrentJobCount = async (userId: number): Promise<number> => {
+const getUserJobs = async (userId: string): Promise<JobData[]> => {
     return new Promise((resolve, reject) => {
-        db.get(
-            'SELECT COUNT(*) as count FROM jobs WHERE user_id = ? AND status = "active"',
+        db.all(
+            'SELECT * FROM jobs WHERE user_id = ? ORDER BY created_at DESC',
             [userId],
-            (err: Error | null, row: { count: number } | undefined) => {
-                if (err) reject(err);
-                resolve(row ? row.count : 0);
+            (err: Error | null, rows: JobData[]) => {
+                if (err) return reject(err);
+
+                // Parse results if they exist
+                rows.forEach((row) => {
+                    if (row.result) {
+                        try {
+                            row.result = JSON.parse(row.result);
+                        } catch (e) {
+                            console.warn(`Failed to parse job result for job ${row.id}`);
+                        }
+                    }
+                });
+
+                resolve(rows);
             },
         );
     });
 };
 
-export { generateApiKey, generateUniqueApiKey, createUser, validateApiKey, getCurrentJobCount, userExists, userLogin };
+const getCurrentJobCount = async (userId: string): Promise<number> => {
+    return new Promise((resolve, reject) => {
+        db.get(
+            'SELECT COUNT(*) as count FROM jobs WHERE user_id = ? AND status IN ("preprocessing", "processing")',
+            [userId],
+            (err: Error | null, row: { count: number } | undefined) => {
+                if (err) {
+                    console.error('Error getting job count:', err);
+                    return reject(err);
+                }
+                resolve(row?.count ?? 0);
+            },
+        );
+    });
+};
+
+export {
+    // API Key functions
+    generateApiKey,
+    generateUniqueApiKey,
+    getUserByApiKey,
+    // Job management functions
+    createJob,
+    updateJobStatus,
+    getJobStatus,
+    getUserJobs,
+    getCurrentJobCount,
+};

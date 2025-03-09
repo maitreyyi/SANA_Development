@@ -13,19 +13,34 @@ import Dashboard from "./pages/Dashboard";
 import RegisterForm from "./pages/RegisterForm";
 import APIRequestForm from "./pages/APIRequestForm";
 import SubmitJobModal from "./pages/SubmitJobModal";
+import { AuthProvider } from "./context/authContext";
+import VerificationPending from "./pages/VerificationPending";
+import VerificationCallback from "./pages/AuthCallback";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
     <Router>
+    <AuthProvider>
       <div className="min-h-screen flex flex-col items-center justify-center *:w-full">
       <Header />
         <main className="w-full max-w-[900px] flex-1 flex flex-col *:flex-1 *:flex *:flex-col">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path = "/login" element={<LoginForm />} />
-            <Route path = "/dashboard" element={<Dashboard />} />
             <Route path = "/register" element={<RegisterForm />} />
-            <Route path = "/request-apiskey" element={<APIRequestForm />} />
+            <Route path = "/verification-pending" element={<VerificationPending />} />
+            <Route path = "/auth/callback" element={<VerificationCallback />} />
+            <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/request-apiskey" element={
+                <ProtectedRoute>
+                  <APIRequestForm />
+                </ProtectedRoute>
+              } />
             <Route path = "/submit-zip" element={<SubmitJobModal onClose={()=>{}} onUpload={()=>{}}/>} />
             <Route path="/submit-job" element={
               <JobSubmissionProvider>
@@ -41,6 +56,7 @@ function App() {
         </main>
       <Footer />
       </div>
+    </AuthProvider>
     </Router>
   );
 }

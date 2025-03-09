@@ -1,6 +1,9 @@
 import { Link } from "react-router";
+import { useAuth } from "../context/authContext";
 
 function Header() {
+  const { user } = useAuth();
+
   return (
     <header className="sticky top-0 z-50 w-full bg-primary text-white p-4 shadow-xl flex justify-between items-center">
       <Link
@@ -20,6 +23,21 @@ function Header() {
         <Link to="/contact" className="hover:text-hover-link transition">
           Contact Us
         </Link>
+        {user ? (
+                      <Link to="/dashboard" className="hover:text-hover-link transition">
+                      Dashboard
+                    </Link>
+        )
+                    : (
+                      <>
+                        <Link to="/login" className="hover:text-hover-link transition">
+                          Login
+                        </Link>
+                        {/* <Link to="/register" className="hover:text-hover-link transition">
+                          Register
+                        </Link> */}
+                      </>
+                    )}
       </nav>
     </header>
   );

@@ -1,9 +1,83 @@
 // import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useAuth } from "../context/authContext";
+import { API_URL } from "../api/api";
+import { useEffect, useState } from "react";
+import { UserRecord } from "../../../backend/types/types";
 
 function Dashboard() {
-  // const [user, setUser] = useState(null);
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<string>('');
+  const [profile, setProfile] = useState<UserRecord | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { logout, authFetch, user } = useAuth();
+
+  // const handleShowApiKey = async () => {
+  //   try {
+  //     setIsLoading(true);
+  //     const response = await authFetch(`${API_URL}/api/auth/api-key`);
+  //     if (!response.ok) {
+  //       throw new Error('Failed to fetch API key');
+  //     }
+  //     const data = await response.json();
+  //     setApiKey(data.apiKey);
+  //   } catch (error) {
+  //     console.error('Error fetching API key:', error);
+  //     // You might want to show an error message to the user here
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFeedback('Copied!');
+      setTimeout(() => setCopyFeedback(''), 2000); // Reset after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      setCopyFeedback('Failed to copy');
+    }
+  };
+
+  const handleShowApiKey = async () => {
+    try {
+      setIsLoading(true);
+      const response = await authFetch(`${API_URL}/api/auth/api-key`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch API key');
+      }
+      const data = await response.json();
+      setApiKey(data.data.api_key);
+    } catch (error) {
+      console.error('Error fetching API key:', error);
+      alert('Failed to fetch API key: ' + (error as Error).message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await authFetch(`${API_URL}/api/auth/profile`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+        const data = await response.json();
+        setProfile(data.data.user);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+
+    if (!user) {
+      fetchProfile();
+    }
+  }, [authFetch, user]);
+
   /** 
   useEffect(() => {
     //const token = localStorage.getItem("token");
@@ -23,17 +97,20 @@ function Dashboard() {
 
   if (!user) return <h2 className="text-center text-gray-700">Loading...</h2>;
    **/
+
+  const displayUser = user || profile;
+
   return (
     <div className="flex flex-col items-center p-6 w-full">
       <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-4xl flex justify-between">
         
         {/* Left Side - User Info and Job History */}
         <div className="w-2/3">
-          <h2 className="text-3xl font-semibold text-blue-700">
-            Welcome back, {/**user.name**/}!
+        <h2 className="text-3xl font-semibold text-blue-700">
+            Welcome back, {displayUser?.first_name} {displayUser?.last_name}!
           </h2>
-          <p className="text-gray-600">Tier: {/**user.tier**/}</p>
-
+          <p className="text-gray-600">Email: {displayUser?.email}</p>
+          {/* <p className="text-gray-600">Role: {displayUser?.role}</p> */}
           {/* Job History */}
           <div className="mt-6">
             <h3 className="text-xl font-medium text-gray-800">History:</h3>
@@ -71,8 +148,8 @@ function Dashboard() {
           </div>
 
           {/* API Key Request */}
-          <div className="bg-yellow-200 p-4 rounded-lg shadow-md">
-            <h3 className="text-lg font-semibold">Need to process more than {/**user.limit**/} files?</h3>
+          {/* <div className="bg-yellow-200 p-4 rounded-lg shadow-md">
+            <h3 className="text-lg font-semibold">Need to process more than {user.limit} files?</h3>
             <p className="text-sm text-gray-700">Request an API key!</p>
             <button 
               className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg w-full transition duration-300"
@@ -80,14 +157,42 @@ function Dashboard() {
             >
               Request API Key
             </button>
-          </div>
+          </div> */}
+            <div className="bg-yellow-200 p-4 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold">Your API Key</h3>
+              <p className="text-sm text-gray-700 mb-2">
+                {apiKey ? 'Your API key:' : 'Click to reveal your API key'}
+              </p>
+              {apiKey ? (
+                <div className="relative bg-gray-100 p-2 rounded break-all text-sm font-mono">
+                  <div className="p-5"> 
+                    {apiKey}
+                  </div>
+                  <button 
+                    onClick={() => copyToClipboard(apiKey)}
+                    className="absolute top-1 right-1 bg-blue-500 hover:bg-blue-600 text-white px-1 py-1 rounded text-[0.60rem] min-w-[30px]"
+                  >
+                    {copyFeedback || 'Copy'}
+                  </button>
+                </div>
+              ) :  (
+                <button 
+                  className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg w-full transition duration-300"
+                  onClick={handleShowApiKey}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Loading...' : 'Show API Key'}
+                </button>
+              )}
+            </div>
+
         </div>
       </div>
 
       {/* Logout Button */}
       <div className="mt-6 text-center">
         <button
-          onClick={() => { localStorage.removeItem("token"); navigate("/"); }}
+          onClick={logout}
           className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition duration-300"
         >
           Log out

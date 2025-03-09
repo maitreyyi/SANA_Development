@@ -1,0 +1,14 @@
+{
+    "name": "sana_development",
+    "private": true,
+    "scripts": {
+        "backend:dev": "cd backend && npm run dev",
+        "backend:build": "cd backend && npm run build",
+        "backend:start": "cd backend && npm run start",
+        "backend:lint": "cd backend && npm run lint"
+    },
+    "workspaces": [
+        "backend",
+        "frontend"
+    ]
+}

@@ -31,7 +31,6 @@ function UploadForm() {
 
         try {
             const response = await api.upload(formData);
-            console.log(response.data);
             // Handle success or error based on response
         } catch (error) {
             console.error(error);

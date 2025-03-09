@@ -1,3 +1,4 @@
+import { ZodError } from 'zod';
 import { ErrorDetails, UnifiedResponse } from '../../types/types';
 
 
@@ -61,6 +62,19 @@ class HttpError<T = undefined, E = undefined> extends Error implements UnifiedRe
 
     static internal(message: string, data?: any, errorLog?: string): HttpError {
         return new HttpError(message, { status: 500, data, errorLog });
+    }
+
+    static validation(zodError: ZodError): HttpError<undefined, { errors: { path: string; message: string }[] }> {
+        return new HttpError('Validation failed', { 
+            status: 400, 
+            data: { 
+                errors: zodError.errors.map(err => ({
+                    path: err.path.join('.'),
+                    message: err.message
+                }))
+            },
+            errorLog: zodError.message
+        });
     }
 }
 

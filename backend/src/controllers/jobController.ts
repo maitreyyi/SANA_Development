@@ -1,6 +1,3 @@
-import dotenv from 'dotenv';
-import path from 'path';
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 import fs from 'fs';
 import { Request, Response, NextFunction } from 'express';
 import { sanitize } from '../utils/sanitize';
@@ -19,6 +16,7 @@ import {
     UnifiedResponse,
     UploadedFiles,
 } from '../../types/types';
+import path from 'path';
 
 // /**
 //  * Downloads the zip file for a job based on the request parameters.

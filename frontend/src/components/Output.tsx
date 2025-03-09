@@ -48,7 +48,6 @@ const Output = ({ jobId, isFinished }: OutputProps) => {
     const fetchJobData = useCallback(async () => {
         try {
             const data: GetJobResultResponse = await api.getJobResult(jobId);
-            console.log("api.getjobresult:", data); //TESTING
             if (isErrorResponse(data)) {
                 setError(data);
                 setLogOutput(data.errorLog);
@@ -96,7 +95,6 @@ const Output = ({ jobId, isFinished }: OutputProps) => {
     }, [jobId, navigate]);
 
     useEffect(() => {
-        console.log("useEffect triggered"); //TESTING
         if (isFinished) {
             fetchJobData();
         }

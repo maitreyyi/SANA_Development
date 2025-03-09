@@ -1,47 +1,21 @@
-import express, { Request, Response, NextFunction } from 'express';
-import passport from '../services/auth';
-import authController from '../controllers/authController';
+import { Router } from 'express';
+import {
+    getProfile,
+    updateProfile,
+    createUserRecord,
+    getApiKey,
+} from '../controllers/authController';
+import { supabaseAuth } from '../middlewares/supabase';
 
-const router = express.Router();
+const router = Router();
 
-// Route to start Google OAuth
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.use(supabaseAuth);
 
-// Google OAuth callback route
-router.get(
-    '/google/callback',
-    passport.authenticate('google', { failureRedirect: 'http://localhost:3000/login' }),
-    (req: Request, res: Response) => {
-        // Successful login - Redirect to frontend
-        res.redirect('http://localhost:3000/dashboard');
-    },
-);
+router.post('/register', createUserRecord);
+router.route('/profile')
+    .get(supabaseAuth, getProfile)
+    .put(supabaseAuth, updateProfile);
 
-// Logout Route
-router.get('/logout', (req: Request, res: Response, next: NextFunction) => {
-    req.logout((err: Error) => {
-        if (err) return next(err); // was'faDiagramNext'
-        res.redirect('/');
-    });
-});
-
-// Register route
-router.post('/register', authController.register);
-
-// Authentication middleware
-const ensureAuthenticated = (req: Request, res: Response, next: NextFunction): void => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.status(401).json({ message: 'Unauthorized' });
-};
-
-// Login route
-router.post('/login', authController.login);
-
-// Profile route
-router.get('/profile', ensureAuthenticated, (req: Request, res: Response) => {
-    res.json({ user: req.user });
-});
+router.get('/api-key', supabaseAuth, getApiKey);
 
 export default router;

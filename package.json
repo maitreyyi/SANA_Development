@@ -6,9 +6,5 @@
         "backend:build": "cd backend && npm run build",
         "backend:start": "cd backend && npm run start",
         "backend:lint": "cd backend && npm run lint"
-    },
-    "workspaces": [
-        "backend",
-        "frontend"
-    ]
+    }
 }

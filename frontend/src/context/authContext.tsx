@@ -5,7 +5,6 @@ import { API_URL } from '../api/api';
 import { useNavigate } from 'react-router';
 import { supabase } from '../lib/supabase';
 
-
 type SignupData = {
     first_name: string;
     last_name: string;
@@ -41,181 +40,103 @@ const AuthContext = createContext<AuthContextProps>({
     authFetch: async () => new Response(),
 });
 
+const getSupabaseToken = async () => {
+  try {
+    const supabaseProjectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const storageKey = `sb-${supabaseProjectId}-auth-token`;
+    const sessionDataString = localStorage.getItem(storageKey);
+    // console.log('Storage key:', storageKey, sessionDataString);
+    // console.log('Session data available:', !!sessionDataString);
+    
+    if (!sessionDataString) return null;
+    
+    const sessionData = JSON.parse(sessionDataString);
+    return sessionData?.access_token || null;
+  } catch (error) {
+    console.error('Error getting token:', error);
+    return null;
+  }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     children,
   }) => {
     const [user, setUser] = useState<User | null>(null);
     const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    // const [authError, setAuthError] = useState<Error | null>(null);
     const navigate = useNavigate();
 
-      // Helper function to make authenticated requests
-      const authFetch = useCallback(async (url: string, options: RequestInit = {}) => {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        
+    // Simplified authFetch function using the direct localStorage approach
+    const authFetch = useCallback(async (url: string, options: RequestInit = {}) => {
+      try {
+        const token = await getSupabaseToken();
         
         if (!token) {
-            throw new Error('No access token available');
+          throw new Error('No access token available');
         }
         
         const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            ...options.headers,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...options.headers,
         };
-    
-    
-        return fetch(url, {
-            ...options,
-            headers,
+        
+        const response = await fetch(url, {
+          ...options,
+          headers,
         });
+        
+        return response;
+      } catch (error) {
+        console.error('Auth fetch error:', error);
+        throw error;
+      }
     }, []);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // Fetch user profile from backend
     const fetchUserProfile = useCallback(async (supabaseUser: SupabaseUser) => {
       try {
-          const { data: { session } } = await supabase.auth.getSession();
-          const token = session?.access_token;
-          if (!token) {
-              console.error('No access token available');
-              setUser(null);
-              return;
-          }
-  
-          // Try to fetch the profile first
-          try {
-              const profileResponse = await authFetch(`${API_URL}/api/auth/profile`);
-
-              // If profile doesn't exist, create it
-              if (profileResponse.status === 404) {
-                  console.log('User not found in backend, creating...');
-                  const createResponse = await authFetch(`${API_URL}/api/auth/register`, {
-                      method: 'POST', 
-                      body: JSON.stringify({
-                        email: supabaseUser.email,
-                        id: supabaseUser.id,
-                        first_name: supabaseUser.user_metadata.first_name,
-                        last_name: supabaseUser.user_metadata.last_name,
-                    })
-                  });
-
-
-                  if (!createResponse.ok) {
-                      console.error('Failed to create user in backend');
-                      return;
-                  }
-
-                  // Retry fetching profile after creation
-                  return await fetchUserProfile(supabaseUser);
-              }
-              if (!profileResponse.ok) {
-                  console.error('Failed to fetch profile:', await profileResponse.text());
-                  setUser(null);
-                  return;
-              }
-  
-              const data = await profileResponse.json();
-              if (data.status === 'success') {
-                  setUser(data.data.user);
-              } else {
-                  setUser(null);
-              }
-          } catch (error) {
-              console.error('Error fetching/creating profile:', error);
-              setUser(null);
-          }
-      } catch (error) {
-          console.error('Error in fetchUserProfile:', error);
-          setUser(null);
-      }
-  }, [setUser, authFetch]);
-  
-
-  
-      
-  
-      
-    useEffect(() => {
-      const initializeAuth = async () => {
-      try {
-          const { data, error } = await supabase.auth.getSession();
-                      
-          if (error) {
-            console.error('Session fetch error:', error); // Add this
-            throw error;
-          }
-        
+          const profileResponse = await authFetch(`${API_URL}/api/auth/profile`);
           
-          if (data.session) {
-              setSupabaseUser(data.session.user);
-              await fetchUserProfile(data.session.user);
-            } else {
-              setSupabaseUser(null);
-              setUser(null);
+          if (profileResponse.status === 404) {
+              // Create user if not found
+              const createResponse = await authFetch(`${API_URL}/api/auth/register`, {
+                  method: 'POST',
+                  body: JSON.stringify({
+                      email: supabaseUser.email,
+                      id: supabaseUser.id,
+                      first_name: supabaseUser.user_metadata.first_name,
+                      last_name: supabaseUser.user_metadata.last_name,
+                  })
+              });
+              
+              if (!createResponse.ok) {
+                  throw new Error('Failed to create user profile');
+              }
+              
+              // Fetch the newly created profile
+              return fetchUserProfile(supabaseUser);
+          }
+          
+          if (!profileResponse.ok) {
+              throw new Error(`Profile fetch failed: ${profileResponse.status}`);
+          }
+          
+          const data = await profileResponse.json();
+          if (data.status === 'success') {
+              setUser(data.data.user);
+          } else {
+              throw new Error('Invalid profile data format');
           }
       } catch (error) {
-          console.error('Auth initialization error:', error);
-          setSupabaseUser(null);
+          console.error('Error fetching profile:', error);
           setUser(null);
-      } finally {
-          setIsLoading(false);
+          throw error;
       }
-  };
+  }, [authFetch]);
 
-    initializeAuth();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setIsLoading(true); 
-      try{
-        if (session?.user) {
-          setSupabaseUser(session.user);
-          if (event === 'SIGNED_IN') {
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              const isNewRegistration = session.user.app_metadata.provider === 'google';
-              await fetchUserProfile(session.user);
-              // await fetchUserProfile(session.user, isNewRegistration);
-              navigate('/dashboard');
-          } else if (event === 'TOKEN_REFRESHED') {
-              await fetchUserProfile(session.user);
-              // await fetchUserProfile(session.user, false);
-          }
-        } else {
-            setSupabaseUser(null);
-            setUser(null);
-        }
-      }catch (error) {
-          console.error('Auth state change error:', error);
-          setSupabaseUser(null);
-          setUser(null);
-      } finally {
-          setIsLoading(false); 
-      }
-  });
-
-    return () => {
-        authListener.subscription.unsubscribe();
-    };
-}, [navigate, fetchUserProfile]);
-
-  // Helper function to make authenticated requests
-  // const authFetch = async (url: string, options: RequestInit = {}) => {
-  //   const token = await supabase.auth.getSession().then(({ data }) => 
-  //     data.session?.access_token
-  //   );
-    
-  //   const headers = {
-  //     'Content-Type': 'application/json',
-  //     ...(token && { Authorization: `Bearer ${token}` }),
-  //     ...options.headers,
-  //   };
-
-  //   return fetch(url, {
-  //     ...options,
-  //     headers,
-  //   });
-  // };
-
+  // Clean login function
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -225,7 +146,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       
       if (error) throw error;
-      navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
       setUser(null);
@@ -236,6 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // Google login
   const loginWithGoogle = async () => {
     setIsLoading(true);
     try {
@@ -260,65 +181,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
         setIsLoading(false);
     }
-};
+  };
 
-const signup = async (signupData: SignupData) => {
-  setIsLoading(true);
-  try {
-      console.log('Starting signup process');
-      const { data, error } = await supabase.auth.signUp({
-          email: signupData.email,
-          password: signupData.password,
-          options: {
-              data: {
-                  first_name: signupData.first_name,
-                  last_name: signupData.last_name,
-              },
-              emailRedirectTo: `${window.location.origin}/auth/callback`
-          },
-      });
-      
-      if (error) throw error;
-      if (!data.user) {
-          throw new Error('No user data returned from signup');
-      }
-      
-      
-      // nav to verification page
-      if (!data.user.confirmed_at) {
-          console.log('User needs email verification');
-          navigate('/verification-pending', { 
-              state: { email: data.user.email } 
-          });
-          return {
-              isConfirmed: false,
-              email: data.user.email
-          };
-      }
+  // Signup function
+  const signup = async (signupData: SignupData) => {
+    setIsLoading(true);
+    try {
+        const { data, error } = await supabase.auth.signUp({
+            email: signupData.email,
+            password: signupData.password,
+            options: {
+                data: {
+                    first_name: signupData.first_name,
+                    last_name: signupData.last_name,
+                },
+                emailRedirectTo: `${window.location.origin}/auth/callback`
+            },
+        });
+        
+        if (error) throw error;
+        if (!data.user) {
+            throw new Error('No user data returned from signup');
+        }
+        
+        // Handle email verification
+        if (!data.user.confirmed_at) {
+            navigate('/verification-pending', { 
+                state: { email: data.user.email } 
+            });
+            return {
+                isConfirmed: false,
+                email: data.user.email
+            };
+        }
 
-      console.log('User is pre-verified, checking session');
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-          console.log('Session available, creating user in backend');
-          // await fetchUserProfile(data.user, true);
-          await fetchUserProfile(data.user);
-          navigate('/dashboard');
-      }
-      
-      return {
-          isConfirmed: Boolean(data.user.confirmed_at),
-          email: data.user?.email
-      };
-  } catch (error) {
-      console.error('Signup error:', error);
-      setUser(null);
-      setSupabaseUser(null);
-      throw error;
-  } finally {
-      setIsLoading(false);
-  }
-};
+        // If pre-verified
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            await fetchUserProfile(data.user);
+            navigate('/dashboard');
+        }
+        
+        return {
+            isConfirmed: Boolean(data.user.confirmed_at),
+            email: data.user?.email
+        };
+    } catch (error) {
+        console.error('Signup error:', error);
+        setUser(null);
+        setSupabaseUser(null);
+        throw error;
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
+  // Logout function
   const logout = async () => {
     setIsLoading(true);
     try {
@@ -326,6 +244,9 @@ const signup = async (signupData: SignupData) => {
       if (error) throw error;
       
       // Auth state change listener will clear the user state
+      setUser(null);
+      setSupabaseUser(null);
+      navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
       setUser(null);
@@ -335,6 +256,64 @@ const signup = async (signupData: SignupData) => {
     }
   };
 
+  // Simplified auth state management
+  useEffect(() => {
+    // Initialize auth state
+    const initAuth = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Check if we have a current session
+        const { data } = await supabase.auth.getSession();
+        
+        if (data.session?.user) {
+          setSupabaseUser(data.session.user);
+          try {
+            await fetchUserProfile(data.session.user);
+          } catch (err) {
+            console.error('Error fetching initial profile:', err);
+          }
+        }
+      } catch (err) {
+        console.error('Session initialization error:', err);
+        setUser(null);
+        setSupabaseUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    // Initialize auth
+    initAuth();
+    
+    // Set up auth state change listener
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`Auth state change: ${event}`);
+      
+      if (event === 'SIGNED_IN' && session) {
+        setIsLoading(true);
+        setSupabaseUser(session.user);
+        
+        try {
+          await fetchUserProfile(session.user);
+          navigate('/dashboard');
+        } catch (error) {
+          console.error('Error fetching profile after sign in:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setSupabaseUser(null);
+        setUser(null);
+        navigate('/login');
+      }
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate, fetchUserProfile]);
+
   const value = {
     user,
     supabaseUser,
@@ -343,7 +322,7 @@ const signup = async (signupData: SignupData) => {
     signup,
     logout,
     isLoading,
-    authFetch,
+    authFetch
   };
 
   return (

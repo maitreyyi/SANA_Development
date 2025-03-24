@@ -9,7 +9,6 @@ import { supabaseAuth } from '../middlewares/supabase';
 
 const router = Router();
 
-router.use(supabaseAuth);
 
 router.post('/register', createUserRecord);
 router.route('/profile')

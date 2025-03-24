@@ -18,7 +18,8 @@ const PORT = process.env.PORT || 4000;
 if (process.env.NODE_ENV === 'development') {
     app.use(
         cors({
-            origin: 'http://localhost:5173',
+            origin: '*',
+            allowedHeaders: ['Origin', 'Content-Type', 'Authorization']
         }),
     );
 

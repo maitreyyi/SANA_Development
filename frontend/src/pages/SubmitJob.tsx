@@ -179,7 +179,7 @@ const SubmitJob = () => {
                         <div className="page-content-wrapper flex flex-col gap-4">
                             {showAlert && (
                                 <Alert
-                                    message={fileError}
+                                    message={fileError ? fileError[0] : null}
                                     onClose={() => setShowAlert(false)}
                                 />
                             )}

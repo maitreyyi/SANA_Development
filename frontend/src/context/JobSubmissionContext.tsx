@@ -164,7 +164,8 @@ const JobSubmissionContextSchema = z.object({
     sanaVersion: SanaVersionsSchema,
     file1: z.instanceof(File).nullable(),
     file2: z.instanceof(File).nullable(),
-    fileError: z.string().nullable(),
+    fileError: z.array(z.string()).nullable(),
+    // fileError: z.string().nullable(),
     similarityData: SimilarityDataSchema,
     handleOptionChange: z
         .function()
@@ -288,7 +289,7 @@ export function JobSubmissionProvider({
     const [sanaVersion, setSanaVersion] = useState<SanaVersion>("SANA1");
     const [file1, setFile1] = useState<File | null>(null);
     const [file2, setFile2] = useState<File | null>(null);
-    const [fileError, setFileError] = useState<string | null>(null);
+    const [fileError, setFileError] = useState<string[] | null>([]);
     const [similarityData, setSimilarityData] = useState<SimilarityData>({
         optionalFilesCount: 0,
         similarityFiles: [null, null, null],
@@ -387,7 +388,7 @@ export function JobSubmissionProvider({
                 const FileSchema = z
                     .instanceof(File)
                     .refine((file) => !file.name.includes(" "), {
-                        message: `${fileType} file contains whitespace.`,
+                        message: `${fileType} file contains whitespace\n`,
                     })
                     .refine(
                         (file) => {
@@ -396,11 +397,11 @@ export function JobSubmissionProvider({
                             return validExts.includes(extension);
                         },
                         {
-                            message: `${fileType} file is not a valid network file.`,
+                            message: `${fileType} file is not a valid network file\n`,
                         }
                     )
-                    .refine((file) => file.size <= 5 * 1024 * 1024, {
-                        message: `${fileType} file exceeds 5MB.`,
+                    .refine((file) => file.size <= 1 * 1024 * 1024, {
+                        message: `${fileType} file exceeds 1MB\n`,
                     });
 
                 FileSchema.parse(file);
@@ -414,11 +415,8 @@ export function JobSubmissionProvider({
                             const errors = results.errors;
 
                             if (errors.length > 0) {
-                                setFileError(
-                                    `${fileType} file: PapaParse errors: ${errors
-                                        .map((e) => e.message)
-                                        .join(", ")}`
-                                );
+                                const errorMessages = errors.map(error => error.message);
+                                setFileError(errorMessages);
                                 resolve(false);
                                 return;
                             }
@@ -470,11 +468,9 @@ export function JobSubmissionProvider({
                                 resolve(true);
                             } catch (error) {
                                 setFileError(
-                                    `${fileType} file: ${
-                                        error instanceof Error
-                                            ? error.message
-                                            : String(error)
-                                    }`
+                                    error instanceof Error ? 
+                                        [error.message]
+                                        : [String(error)]
                                 );
                                 resolve(false);
                             }
@@ -482,7 +478,7 @@ export function JobSubmissionProvider({
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         error: (error: any) => {
                             setFileError(
-                                `${fileType} file: PapaParse error: ${error.message}`
+                                [`${fileType} file: PapaParse error: ${error.message}`]
                             );
                             resolve(false);
                         },
@@ -493,14 +489,15 @@ export function JobSubmissionProvider({
                 }
             } catch (error) {
                 if (error instanceof z.ZodError) {
-                    setFileError(error.errors[0].message);
+                    const errorMessages = error.errors.map(error => error.message);
+                    setFileError(errorMessages);
                 } else {
                     setFileError(
-                        `Invalid ${fileType} file: ${
+                        [`Invalid ${fileType} file: ${
                             error instanceof Error
                                 ? error.message
                                 : String(error)
-                        }`
+                        }`]
                     );
                 }
                 resolve(false);
@@ -579,6 +576,14 @@ export function JobSubmissionProvider({
             console.error("Invalid SANA version:", error);
         }
     };
+    useEffect(() => { // alert user if invalid file was uploaded
+        if (!fileError || fileError.length == 0) return;
+        let msg = "Invalid File\n";
+        for (let err of fileError) {
+            msg += err;
+        }
+        alert(msg);
+    }, [fileError]);
 
     const handleFileInputChange = async (
         event: React.ChangeEvent<HTMLInputElement>,
@@ -589,11 +594,18 @@ export function JobSubmissionProvider({
 
         try {
             const isValid = await validateFile(file, fileType);
+            console.log("Is valid: ", isValid);
             if (isValid) {
-                if (fileType === "network-file1") setFile1(file);
+                if (fileType === "network-file1") {
+                    console.log("setting file 1");
+                    setFile1(file);
+                }
                 else if (fileType === "network-file2") setFile2(file);
                 return true;
             }
+            event.target.value = '';
+            setFile1(null);
+            setFile2(null);
             return false;
         } catch (error) {
             console.error("File validation error:", error);
@@ -642,7 +654,7 @@ export function JobSubmissionProvider({
         try {
             // Validate required files
             if (!file1 || !file2) {
-                setFileError("Please upload both network files.");
+                setFileError(["Please upload both network files."]);
                 return;
             }
 
@@ -689,17 +701,17 @@ export function JobSubmissionProvider({
                 }
             } catch (error) {
                 if (error instanceof ApiError) {
-                    setFileError(error.message);
+                    setFileError([error.message]);
                 } else {
-                    setFileError("An error occurred during submission");
+                    setFileError(["An error occurred during submission"]);
                     console.error("Submit Error:", error);
                 }
             }
         } catch (error) {
             setFileError(
                 error instanceof Error
-                    ? error.message
-                    : "An unexpected error occurred"
+                    ? [error.message]
+                    : ["An unexpected error occurred"]
             );
             console.error("Submit preparation error:", error);
         }

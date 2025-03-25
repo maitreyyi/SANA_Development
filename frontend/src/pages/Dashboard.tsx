@@ -2,15 +2,15 @@
 import { useNavigate } from "react-router";
 import { useAuth } from "../context/authContext";
 import { API_URL } from "../api/api";
-import { SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { UserRecord } from "../../../backend/types/types";
 import { supabase } from "../lib/supabase";
 import LoadingSpinner from "../components/Loader";
 
 function Dashboard() {
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [displayKey, setDisplayKey] = useState<boolean>(false);
   const [copyFeedback, setCopyFeedback] = useState<string>('');
-  // const [profile, setProfile] = useState<UserRecord | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { logout, authFetch, user } = useAuth();
@@ -33,26 +33,6 @@ function Dashboard() {
     }
     getUserInfo();
   }, [])
-  // const { data: { user }, } = await supabase.auth.getUser();
-  // console.log("74: ");
-  // console.log(user);
-
-  // const handleShowApiKey = async () => {
-  //   try {
-  //     setIsLoading(true);
-  //     const response = await authFetch(`${API_URL}/api/auth/api-key`);
-  //     if (!response.ok) {
-  //       throw new Error('Failed to fetch API key');
-  //     }
-  //     const data = await response.json();
-  //     setApiKey(data.apiKey);
-  //   } catch (error) {
-  //     console.error('Error fetching API key:', error);
-  //     // You might want to show an error message to the user here
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -66,6 +46,8 @@ function Dashboard() {
   };
 
   const handleShowApiKey = async () => {
+    setDisplayKey(!displayKey);
+    if (apiKey) return;
     try {
       setIsLoading(true);
       const response = await authFetch(`${API_URL}/api/auth/api-key`);
@@ -190,10 +172,8 @@ function Dashboard() {
           </div> */}
             <div className="bg-yellow-200 p-4 rounded-lg shadow-md">
               <h3 className="text-lg font-semibold">Your API Key</h3>
-              <p className="text-sm text-gray-700 mb-2">
-                {apiKey ? 'Your API key:' : 'Click to reveal your API key'}
-              </p>
-              {apiKey ? (
+              {apiKey && displayKey ? (
+                <>
                 <div className="relative bg-gray-100 p-2 rounded break-all text-sm font-mono">
                   <div className="p-5"> 
                     {apiKey}
@@ -205,9 +185,17 @@ function Dashboard() {
                     {copyFeedback || 'Copy'}
                   </button>
                 </div>
-              ) :  (
                 <button 
-                  className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg w-full transition duration-300"
+                    className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg w-full transition duration-300 cursor-pointer"
+                    onClick={handleShowApiKey}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Loading...' : 'Hide API Key'}
+                  </button>
+                </>
+              ) : (
+                <button 
+                  className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg w-full transition duration-300 cursor-pointer"
                   onClick={handleShowApiKey}
                   disabled={isLoading}
                 >
@@ -215,7 +203,6 @@ function Dashboard() {
                 </button>
               )}
             </div>
-
         </div>
       </div>
 

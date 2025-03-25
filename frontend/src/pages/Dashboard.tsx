@@ -152,7 +152,7 @@ function Dashboard() {
             <h3 className="text-lg font-semibold">Submit another Job?</h3>
             <p className="text-sm text-gray-700">Note: zip file required</p>
             <button 
-              className="mt-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg w-full transition duration-300"
+              className="mt-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg w-full transition duration-300 cursor-pointer"
               onClick={() => navigate("/submit-zip")}
             >
               Submit Job
@@ -210,7 +210,7 @@ function Dashboard() {
       <div className="mt-6 text-center">
         <button
           onClick={logout}
-          className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition duration-300"
+          className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition duration-300 cursor-pointer"
         >
           Log out
         </button>

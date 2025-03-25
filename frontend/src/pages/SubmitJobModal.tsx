@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCloudUploadAlt } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router";
 
 interface SubmitJobModalProps {
   onClose: () => void;
@@ -10,6 +11,7 @@ interface SubmitJobModalProps {
 const SubmitJobModal = ({ onClose, onUpload }: SubmitJobModalProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const navigate = useNavigate();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -93,13 +95,14 @@ const SubmitJobModal = ({ onClose, onUpload }: SubmitJobModalProps) => {
         {/* Buttons */}
         <div className="flex justify-end mt-4 space-x-2">
           <button 
-            className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-black rounded-md"
-            onClick={onClose}
+            className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-black rounded-md cursor-pointer"
+            onClick={() => navigate("/dashboard")}
+            // onClick={onClose}
           >
             Cancel
           </button>
           <button
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md cursor-pointer"
             onClick={handleUpload}
             disabled={isUploading}
           >

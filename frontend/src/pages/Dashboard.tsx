@@ -2,16 +2,40 @@
 import { useNavigate } from "react-router";
 import { useAuth } from "../context/authContext";
 import { API_URL } from "../api/api";
-import { useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import { UserRecord } from "../../../backend/types/types";
+import { supabase } from "../lib/supabase";
+import LoadingSpinner from "../components/Loader";
 
 function Dashboard() {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<string>('');
-  const [profile, setProfile] = useState<UserRecord | null>(null);
+  // const [profile, setProfile] = useState<UserRecord | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { logout, authFetch, user } = useAuth();
+  const [profile, setProfile] = useState<UserRecord | null>(user);
+
+  useEffect(() => {
+    async function getUserInfo() {
+      const { data: { user }, } = await supabase.auth.getUser();
+      const userName = user?.user_metadata?.name.split(" ");
+      const firstName = userName[0];
+      const lastName = userName[1];
+      setProfile((prevUser) => ({
+        id: user?.id || prevUser?.id || '',
+        first_name: firstName || prevUser?.first_name || '',
+        last_name: lastName || prevUser?.last_name || '',
+        email: user?.email || prevUser?.email || '',
+        api_key: prevUser?.api_key || '',
+        created_at: prevUser?.created_at || new Date().toISOString()
+      }));
+    }
+    getUserInfo();
+  }, [])
+  // const { data: { user }, } = await supabase.auth.getUser();
+  // console.log("74: ");
+  // console.log(user);
 
   // const handleShowApiKey = async () => {
   //   try {
@@ -98,7 +122,13 @@ function Dashboard() {
   if (!user) return <h2 className="text-center text-gray-700">Loading...</h2>;
    **/
 
-  const displayUser = user || profile;
+  // const displayUser = user || profile;
+  const displayUser = profile || user;
+
+  if (!displayUser?.first_name || !displayUser?.last_name)
+    return <>
+      <LoadingSpinner />
+    </>;
 
   return (
     <div className="flex flex-col items-center p-6 w-full">

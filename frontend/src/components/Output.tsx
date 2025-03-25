@@ -9,8 +9,9 @@ import {
     ProcessJobResponse,
     ErrorResponse,
     isErrorResponse,
-    isJobRedirectResponse,
-    isJobResultsResponse,
+    isRedirectResponse,
+    isGetJobResultResponse,
+    isGetJobResultSuccessResponse
 } from "../api/apiValidation";
 
 interface OutputProps {
@@ -51,11 +52,11 @@ const Output = ({ jobId, isFinished }: OutputProps) => {
             if (isErrorResponse(data)) {
                 setError(data);
                 setLogOutput(data.errorLog);
-            } else if (isJobRedirectResponse(data)) {
+            } else if (isRedirectResponse(data)) {
                 navigate(data.redirect);
-            } else if (isJobResultsResponse(data)) {
+            } else if (isGetJobResultResponse(data)) {
                 setJobData(data);
-                setLogOutput(data.execLogFileOutput);
+                setLogOutput(data.data.execLogFileOutput || 'No execution log output.');
             }
         } catch (err) {
             setError({
@@ -72,18 +73,17 @@ const Output = ({ jobId, isFinished }: OutputProps) => {
             if (isErrorResponse(data)) {
                 setError(data);
                 setLogOutput(data.errorLog);
-            } else if (isJobRedirectResponse(data)) {
+            } else if (isRedirectResponse(data)) {
                 navigate(data.redirect);
-            } else if (isJobResultsResponse(data)) {
+            } else if (isGetJobResultResponse(data)) {
                 if (
-                    data.success &&
-                    data.status === "Networks already aligned."
+                    data.data.success && data.data.status === "Networks already aligned." // maybe remove second 
                 ) {
                     navigate(`/lookup-job/${jobId}`);
                     return;
                 }
                 setJobData(data);
-                setLogOutput(data.execLogFileOutput);
+                setLogOutput(data.data.execLogFileOutput || 'No execution log available.');
             }
         } catch (error) {
             setError({
@@ -181,8 +181,8 @@ const Output = ({ jobId, isFinished }: OutputProps) => {
                     </Note>
                     {isFinished &&
                         jobData &&
-                        isJobResultsResponse(jobData) &&
-                        jobData.zipDownloadUrl && (
+                        isGetJobResultSuccessResponse(jobData) &&
+                        jobData.data.zipDownloadUrl && (
                             <Button
                                 className="w-fit mt-4 mx-auto md:mx-0"
                                 onClick={downloadZipFile}
@@ -193,8 +193,8 @@ const Output = ({ jobId, isFinished }: OutputProps) => {
 
                     <div>
                         {jobData &&
-                            isJobResultsResponse(jobData) &&
-                            jobData.execLogFileOutput && (
+                            isGetJobResultSuccessResponse(jobData) &&
+                            jobData.data.execLogFileOutput && (
                                 <div className="mb-5">
                                     {parse(modifiedExecLogFileOutput)}
                                 </div>

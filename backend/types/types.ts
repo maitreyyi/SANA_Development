@@ -8,6 +8,7 @@ declare global {
             supabase?: SupabaseClient;
             user?: SupabaseUser;
             userProfile?: UserRecord; 
+            extractDir?: string;
         }
     }
 }
@@ -75,44 +76,6 @@ export type JobData = {
     updatedAt: Date;
 };
 
-// export interface JobResponse extends SuccessResponse<JobData> {}
-// export interface ProcessSuccessResponse extends SuccessResponse<never>{}
-
-
-// interface ProcessResponse {
-//     success: boolean;
-//     status: string;
-//     redirect?: string;
-//     execLogFileOutput?: string;
-// }
-
-
-// interface ProcessedJobResponse {
-//     message: string;
-//     jobId: string;
-//     note: string;
-//     zipDownloadUrl: string;
-//     execLogFileOutput: string;
-// }
-
-// // Process response type
-// export interface ProcessResponse extends ResponseBase {
-//     success: boolean;
-//     status: string;
-//     redirect?: string;
-//     execLogFileOutput?: string;
-//   }
-  
-//   // Fully processed job response
-//   export interface ProcessedJobResponse extends SuccessResponse<{
-//     jobId: string;
-//     note: string;
-//     zipDownloadUrl: string;
-//     execLogFileOutput: string;
-//   }> {}
-
-// Process response types
-
 
 export interface JobInfoFile {
     status: JobStatus; 
@@ -150,7 +113,7 @@ export interface ProcessedJobResponse {
     jobId: string;
     note: string;
     zipDownloadUrl: string;
-    execLogFileOutput?: string;
+    execLogFileOutput: string;
 };
 
 // AUTH TYPES

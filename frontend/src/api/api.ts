@@ -4,9 +4,9 @@ import {
     GetJobResultResponse,
     ApiOptions, ContactFormData, ErrorResponseSchema,
     ContactResponseSchema,
-    ProcessJobResponseSchema,
+    ProcessResponseSchema,
     SubmitJobResponseSchema,
-    GetJobResultResponseSchema
+    GetJobResultSuccessResponseSchema, // Use this one for success cases
   } from './apiValidation';
 
 export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
@@ -137,7 +137,7 @@ const api: Api = {
   process: async (jobId) => {
     return await apiRequest(
       "/jobs/process",
-      ProcessJobResponseSchema,
+      ProcessResponseSchema,
       {
         method: "POST",
         body: JSON.stringify({ id: jobId }),
@@ -145,7 +145,7 @@ const api: Api = {
     );
   },
   getJobResult: async (jobId) => {
-    return await apiRequest(`/jobs/${jobId}`, GetJobResultResponseSchema, { method: 'GET' });
+    return await apiRequest(`/jobs/${jobId}`, GetJobResultSuccessResponseSchema, { method: 'GET' });
   },
 
   downloadJobZip: async (jobId) => {

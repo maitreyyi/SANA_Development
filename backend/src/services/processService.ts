@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import HttpError from '../middlewares/HttpError';
 import { exec } from 'child_process';
-import * as archiver from 'archiver';
+import Archiver from "archiver";
 import { SANA_MODELS, SANA_LOCATIONS, validateSanaVersion, isSana2Options } from '../config/modelOptions';
 import { FailedJobInfoFile, JobInfoFile, ProcessJobData, SuccessJobInfoFile, UnifiedResponse } from '../../types/types';
 import { readInfoFile, isProcessedJob, isFailedJob, writeInfoFile, isPreprocessingJob, isProcessingJob } from '../utils/infoFileHandler';
@@ -164,7 +164,7 @@ const jobProcess = async (jobId: string): Promise<ProcessJobData> => {
                     const zipName = `SANA_alignment_output_${id}.zip`;
                     const zipPath = path.join(jobLocation, zipName);
                     const output = fs.createWriteStream(zipPath);
-                    const archive = archiver('zip', { zlib: { level: 9 } });
+                    const archive = Archiver('zip',{ zlib: { level: 9 } });
 
                     archive.on('entry', function (entry) {
                         console.log('Adding to zip:', entry.name);

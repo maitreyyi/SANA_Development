@@ -19,43 +19,97 @@ export const ContactResponseSchema = z.object({
     message: z.string(),
 });
 
-export const JobResultsResponseSchema = z.object({
+
+export const RedirectResponseSchema = z.object({
+    status: z.literal('redirect'), 
     message: z.string(),
+    redirect: z.string(), 
+});
+
+export type RedirectResponse = z.infer<typeof RedirectResponseSchema>;
+
+export const isRedirectResponse = (data: unknown): data is RedirectResponse => {
+    return RedirectResponseSchema.safeParse(data).success;
+};
+
+// START of processing jobs 
+// ProcessJobData
+export const ProcessJobDataSchema = z.object({
+    success: z.boolean(),
+    status: z.string(),
+    jobId: z.string(),
+    execLogFileOutput: z.string().optional(),
+    redirect: z.string().optional(),
+    note: z.string().optional(),
+    zipDownloadUrl: z.string().optional(),
+});
+export const ProcessSuccessResponseSchema = z.object({
+    status: z.literal('success'), 
+    message: z.string(),
+    data: ProcessJobDataSchema, // Use the nested schema here
+    // redirect here maybe include? // redirect: z.string().optional(),
+});
+// UnifiedResponse<ProcessJobData> 
+export const ProcessResponseSchema = z.discriminatedUnion("status", [
+    ProcessSuccessResponseSchema, 
+    RedirectResponseSchema, 
+]);
+export type ProcessJobData = z.infer<typeof ProcessJobDataSchema>;
+export type ProcessSuccessResponse = z.infer<typeof ProcessSuccessResponseSchema>;
+export type ProcessJobResponse = z.infer<typeof ProcessResponseSchema>;
+
+// Type guards for processing jobs
+export const isProcessJobData = (data: unknown): data is ProcessJobData => {
+    return ProcessJobDataSchema.safeParse(data).success;
+};
+
+export const isProcessSuccessResponse = (data: unknown): data is ProcessSuccessResponse => {
+    return ProcessSuccessResponseSchema.safeParse(data).success;
+};
+
+export const isProcessResponse = (data: unknown): data is ProcessJobResponse => {
+    return ProcessResponseSchema.safeParse(data).success;
+};
+// END of processing jobs
+
+
+// START of getting jobs
+export const ProcessedJobsDataSchema = z.object({
     jobId: z.string(),
     note: z.string(),
     zipDownloadUrl: z.string(),
     execLogFileOutput: z.string(),
-    redirect: z.string().optional(), //TESTING
-    error: z.string().optional(), //TESTING
-    errorLog: z.string().optional(), //TESTING
 });
-
-export const JobRedirectResponseSchema = z.object({
-    redirect: z.string(),
+export const GetJobResultSuccessResponseSchema = z.object({
+    status: z.literal('success'), 
+    message: z.string(),
+    data: ProcessedJobsDataSchema, 
+    // redirect here maybe include? //x redirect: z.string().optional(),
 });
-
-// export const ProcessJobResponseSchema = z.object({
-//     success: z.boolean(),
-//     status: z.string(), // Or a more specific enum if you know the possible values
-//     redirect: z.string().optional(),
-//     execLogFileOutput: z.string().optional(),
-//     message: z.string().optional(), //TESTING
-//     error: z.string().optional(), //TESTING
-//     errorLog: z.string().optional(), //TESTING
-// });
-export const ProcessSuccessResponseSchema = z.object({
-    success: z.boolean(),
-    status: z.string(),
-    execLogFileOutput: z.string().optional(),
-    message: z.string().optional(),
-});
-
-// Create a union type for ProcessJobResponseSchema
-export const ProcessJobResponseSchema = z.union([
-    ProcessSuccessResponseSchema,
-    JobRedirectResponseSchema,
-    ErrorResponseSchema,
+// UnifiedResponse<ProcessedJobData> 
+export const GetJobResultSchema = z.discriminatedUnion('status', [
+    GetJobResultSuccessResponseSchema,
+    RedirectResponseSchema,
 ]);
+
+export type ProcessedJobsData = z.infer<typeof ProcessedJobsDataSchema>;
+export type GetJobResultSuccessResponse = z.infer<typeof GetJobResultSuccessResponseSchema>;
+export type GetJobResultResponse = z.infer<typeof GetJobResultSchema>;
+
+// Type guards for getting jobs
+export const isProcessedJobsData = (data: unknown): data is ProcessedJobsData => {
+    return ProcessedJobsDataSchema.safeParse(data).success;
+};
+
+export const isGetJobResultSuccessResponse = (data: unknown): data is GetJobResultSuccessResponse => {
+    return GetJobResultSuccessResponseSchema.safeParse(data).success;
+};
+
+export const isGetJobResultResponse = (data: unknown): data is GetJobResultResponse => {
+    return GetJobResultSchema.safeParse(data).success;
+};
+// END of getting jobs
+
 
 export const ErrorMessageResponseSchema = z.object({
     id: z.string(),
@@ -69,11 +123,6 @@ export const FailedJobResponseSchema = z.object({
     error: z.string(),
 });
 
-export const GetJobResultResponseSchema = z.union([
-    JobResultsResponseSchema,
-    JobRedirectResponseSchema,
-    ErrorResponseSchema, 
-]);
 
 export const LookupJobSuccessSchema = z.object({
     status: z.enum(['preprocessed', 'processing', 'processed', 'failed']),
@@ -91,17 +140,8 @@ export const LookupJobSchema = z.union([
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 export type SubmitJobResponse = z.infer<typeof SubmitJobResponseSchema>;
 export type ContactResponse = z.infer<typeof ContactResponseSchema>;
-export type JobResultsResponse = z.infer<typeof JobResultsResponseSchema>;
-export type JobRedirectResponse = z.infer<typeof JobRedirectResponseSchema>;
-// export type ProcessJobResponse = z.infer<typeof ProcessJobResponseSchema>;
-export type ErrorMessageResponse = z.infer<typeof ErrorMessageResponseSchema>;
-export type FailedJobResponse = z.infer<typeof FailedJobResponseSchema>;
-export type GetJobResultResponse = z.infer<typeof GetJobResultResponseSchema>;
-
-export type ProcessSuccessResponse = z.infer<typeof ProcessSuccessResponseSchema>;
-export type ProcessJobResponse = z.infer<typeof ProcessJobResponseSchema>;
-
-
+export type ErrorMessageResponse = z.infer<typeof ErrorMessageResponseSchema>; // delete later
+export type FailedJobResponse = z.infer<typeof FailedJobResponseSchema>; // delete later
 export type LookupJobSuccessResponse = z.infer<typeof LookupJobSuccessSchema>;
 export type LookupJobResponse = z.infer<typeof LookupJobSchema>;
 
@@ -123,29 +163,8 @@ export const isContactResponse = (data: unknown): data is ContactResponse => {
     return ContactResponseSchema.safeParse(data).success;
 };
 
-export const isJobResultsResponse = (
-    data: unknown
-): data is JobResultsResponse => {
-    return JobResultsResponseSchema.safeParse(data).success;
-};
 
-export const isJobRedirectResponse = (
-    data: unknown
-): data is JobRedirectResponse => {
-    return JobRedirectResponseSchema.safeParse(data).success;
-};
 
-// export const isProcessJobResponse = (
-//     data: unknown
-// ): data is ProcessJobResponse => {
-//     return ProcessJobResponseSchema.safeParse(data).success;
-// };
-
-export const isProcessJobResponse = (
-    data: unknown
-): data is ProcessJobResponse => {
-    return ProcessJobResponseSchema.safeParse(data).success;
-};
 
 export const isErrorMessageResponse = (
     data: unknown

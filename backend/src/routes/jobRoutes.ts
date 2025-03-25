@@ -46,18 +46,22 @@ import {
     uploadMiddleware,
     validateAllFilesMiddleware,
     cleanupFilesErrorHandler,
+    zipUploadMiddleware,
+    extractZipMiddleware,
+    cleanupZipMiddleware,
 } from '../middlewares/upload';
 import {
     downloadZipJob,
     getJobResults,
     submitJobController,
     processController,
+    submitDefaultZipController,
 } from '../controllers/jobController';
 import apiKeyMiddleware from '../middlewares/apiKeyMiddleware';
+import { supabaseAuth } from '../middlewares/supabase';
 
 const router: Router = Router();
 
-router.use(apiKeyMiddleware);
 
 router.get('/:id/zip', downloadZipJob);
 router.post(
@@ -70,5 +74,14 @@ router.post(
 router.post('/process', processController);
 router.get('/:id', getJobResults);
 // router.get('/api/jobs', lookupJobsController); <-- for admin page in future
+router.post(
+    '/submit-default-zip',
+    supabaseAuth,
+    zipUploadMiddleware,
+    extractZipMiddleware,
+    submitDefaultZipController,
+    cleanupZipMiddleware
+);
+
 
 export default router;

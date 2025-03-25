@@ -291,74 +291,6 @@ const validateSimilarityFileMiddleware = async (
     }
 };
 
-// const validateAllFilesMiddleware = async (req: RequestWithFiles, res: Response, next: NextFunction): Promise<void> => {
-//     try {
-//         // // Run validateFilesMiddleware as a Promise
-//         // await new Promise<void>((resolve, reject) => {
-//         //     validateFilesMiddleware(req, res, (err?: Error) => {
-//         //         if (err) reject(err);
-//         //         else resolve();
-//         //     });
-//         // });
-
-//         // // Only proceed to similarity validation if the first validation passes
-//         // await new Promise<void>((resolve, reject) => {
-//         //     validateSimilarityFileMiddleware(req, res, (err?: Error) => {
-//         //         if (err) reject(err);
-//         //         else resolve();
-//         //     });
-//         // });
-//         const runValidateFiles = () => {
-//             return new Promise<void>((resolve, reject) => {
-//                 try {
-//                     validateFilesMiddleware(req, res, (err?: any) => {
-//                         if (err) reject(err);
-//                         else resolve();
-//                     });
-//                 } catch (err) {
-//                     // Catch synchronous errors that might be thrown
-//                     reject(err);
-//                 }
-//             });
-//         };
-
-//         const runValidateSimilarityFile = () => {
-//             return new Promise<void>((resolve, reject) => {
-//                 try {
-//                     validateSimilarityFileMiddleware(req, res, (err?: any) => {
-//                         if (err) reject(err);
-//                         else resolve();
-//                     });
-//                 } catch (err) {
-//                     // Catch synchronous errors that might be thrown
-//                     reject(err);
-//                 }
-//             });
-//         };
-//         await runValidateFiles();
-//         await runValidateSimilarityFile();
-
-//         next();
-//     } catch (error) {
-//         // clean up files on error
-//         const allFiles = [...(req.files?.files || []), ...(req.files?.similarityFiles || [])];
-
-//         // Use Promise.all to ensure all files are deleted
-//         await Promise.all(
-//             allFiles.map(
-//                 (file) =>
-//                     new Promise<void>((resolve) => {
-//                         fs.unlink(file.path, (err) => {
-//                             if (err) console.error(`Error deleting file ${file.path}:`, err);
-//                             resolve();
-//                         });
-//                     }),
-//             ),
-//         );
-
-//         next(error);
-//     }
-// };
 const validateAllFilesMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         await validateFilesMiddleware(req);
@@ -403,9 +335,140 @@ const uploadMiddleware = upload.fields([
     { name: 'similarityFiles', maxCount: 3 },
 ]);
 
+const zipStorage = multer.diskStorage({
+    destination: tmpDir,
+    filename: (req: Request, file: MulterFile, cb: (error: Error | null, filename: string) => void) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, 'zip-' + uniqueSuffix + path.extname(file.originalname));
+    },
+});
+
+const zipUpload = multer({
+    storage: zipStorage,
+    fileFilter: (req: Request, file: MulterFile, cb: multer.FileFilterCallback) => {
+        // Only accept zip files
+        const fileExt = path.extname(file.originalname).toLowerCase();
+        if (fileExt !== '.zip') {
+            return cb(new HttpError('Only .zip files are accepted for this endpoint.', { status: 400 }));
+        }
+        
+        // Check for whitespace in filename
+        if (/\s/.test(file.originalname)) {
+            return cb(new HttpError('File names cannot contain whitespace.', { status: 400 }));
+        }
+        
+        cb(null, true);
+    }
+});
+
+const zipUploadMiddleware = zipUpload.single('zipFile');
+
+// ...existing code...
+
+import AdmZip from 'adm-zip';
+import { Readable } from 'stream';
+
+// Add this new middleware after your zipUploadMiddleware
+const extractZipMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        if (!req.file) {
+            return next(new HttpError('Zip file is required.', { status: 400 }));
+        }
+
+        const zipFile = req.file;
+        const extractDir = path.join(tmpDir, `extract-${Date.now()}`);
+
+        // Create extraction directory
+        if (!fs.existsSync(extractDir)) {
+            fs.mkdirSync(extractDir, { recursive: true });
+        }
+        
+        // Extract zip file
+        const zip = new AdmZip(zipFile.path);
+        zip.extractAllTo(extractDir, true);
+        
+        // Find network files (.gw or .el files)
+        const networkFiles = fs.readdirSync(extractDir)
+            .filter(file => ['.gw', '.el'].includes(path.extname(file).toLowerCase()))
+            .map(file => {
+                const filePath = path.join(extractDir, file);
+                // Read file content into buffer
+                const fileBuffer = fs.readFileSync(filePath);
+                
+                // Create a readable stream from the buffer (no file handles kept open)
+                const fileStream = new Readable();
+                fileStream.push(fileBuffer);
+                fileStream.push(null); // Signal end of stream
+                
+                return {
+                    path: filePath,
+                    originalname: file,
+                    fieldname: 'files',
+                    mimetype: 'application/octet-stream',
+                    size: fs.statSync(filePath).size,
+                    filename: path.basename(file),
+                    encoding: '7bit',
+                    destination: extractDir,
+                    buffer: fileBuffer,
+                    stream: fileStream
+                };
+            });
+        
+        if (networkFiles.length < 2) {
+            // Clean up extracted files if validation fails
+            fs.rmSync(extractDir, { recursive: true, force: true });
+            return next(new HttpError('The zip file must contain at least two network files (.gw or .el).', { status: 400 }));
+        }
+        
+        // Attach the files to req object in the format expected by the job creation code
+        req.files = {
+            files: networkFiles.slice(0, 2),
+            similarityFiles: [],
+        };
+        
+        // Store the extract directory path for cleanup later
+        req.extractDir = extractDir;
+        
+        next();
+    } catch (err) {
+        // Clean up zip file on error
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
+        next(err);
+    }
+};
+
+// Add a cleanup middleware for after processing
+const cleanupZipMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+    // Clean up extracted directory
+    if (req.extractDir && fs.existsSync(req.extractDir)) {
+        try {
+            fs.rmSync(req.extractDir, { recursive: true, force: true });
+        } catch (err) {
+            console.error('Error cleaning up extract directory:', err);
+        }
+    }
+    
+    // Clean up original zip file
+    if (req.file && fs.existsSync(req.file.path)) {
+        try {
+            fs.unlinkSync(req.file.path);
+        } catch (err) {
+            console.error('Error cleaning up zip file:', err);
+        }
+    }
+    
+    next();
+};
+
 export {
     uploadMiddleware,
     validateAllFilesMiddleware,
     cleanupFiles,
     cleanupFilesErrorHandler,
+    zipUploadMiddleware,
+    extractZipMiddleware,
+    cleanupZipMiddleware,
+    tmpDir
 };

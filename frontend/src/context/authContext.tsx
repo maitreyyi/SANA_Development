@@ -75,14 +75,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!token) {
           throw new Error('No access token available');
         }
+        const isFormData = options.body instanceof FormData;
         
         const headers = {
-          'Content-Type': 'application/json',
+          ...(!isFormData && { 'Content-Type': 'application/json' }),
           'Authorization': `Bearer ${token}`,
           ...options.headers,
         };
         
-        const response = await fetch(url, {
+        const fullUrl = url.startsWith(API_URL) ? url : `${API_URL}${url.startsWith('/') ? url : '/' + url}`;
+        
+        const response = await fetch(fullUrl, {
           ...options,
           headers,
         });

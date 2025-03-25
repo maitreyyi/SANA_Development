@@ -2,61 +2,103 @@ import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCloudUploadAlt } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router";
+import { useAuth } from "../context/authContext";
 
 interface SubmitJobModalProps {
   onClose: () => void;
   onUpload: () => void;
 }
 
+
 const SubmitJobModal = ({ onClose, onUpload }: SubmitJobModalProps) => {
-  const [file, setFile] = useState<File | null>(null);
+  const [zipFile, setZipFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const { authFetch } = useAuth();
   const navigate = useNavigate();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
+      setZipFile(event.target.files[0]);
     }
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     if (event.dataTransfer.files.length) {
-      setFile(event.dataTransfer.files[0]);
+      setZipFile(event.dataTransfer.files[0]);
     }
   };
 
-  const handleUpload = async () => {
-    if (!file) {
-      alert("Please select a file to upload.");
-      return;
+  // const handleUpload = async () => {
+  //   if (!file) {
+  //     alert("Please select a file to upload.");
+  //     return;
+  //   }
+
+  //   setIsUploading(true);
+  //   const formData = new FormData();
+  //   formData.append("file", file);
+
+  //   try {
+  //     const response = await fetch("http://localhost:5000/api/upload", {
+  //       method: "POST",
+  //       body: formData,
+  //     });
+
+  //     const data = await response.json();
+  //     if (data.success) {
+  //       alert("File uploaded successfully!");
+  //       onUpload();
+  //       onClose();
+  //     } else {
+  //       alert("Upload failed: " + data.message);
+  //     }
+  //   } catch (error) {
+  //     console.error("Upload error:", error);
+  //     alert("An error occurred. Please try again.");
+  //   }
+
+  //   setIsUploading(false);
+  // };
+// Example usage in a React component
+const handleZipUpload = async () => {
+  if (!zipFile) {
+    alert("Please select a zip file to upload.");
+    return;
+  }
+
+  setIsUploading(true);
+  const formData = new FormData();
+  formData.append("zipFile", zipFile);
+
+  try {
+    const response = await authFetch(`/api/jobs/submit-default-zip`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (data.status === "success") {
+      alert("Job submitted successfully!");
+      onUpload();
+      onClose(); 
+      // Handle success case
+    } else if (data.status === "redirect") {
+      onClose();
+      const redirectPath = data.redirect.startsWith('http') 
+      ? new URL(data.redirect).pathname 
+      : data.redirect;
+      navigate(redirectPath);
+    } else {
+      alert("Upload failed: " + data.message);
     }
+  } catch (error) {
+    console.error("Upload error:", error);
+    alert("An error occurred. Please try again.");
+  }
 
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch("http://localhost:5000/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        alert("File uploaded successfully!");
-        onUpload();
-        onClose();
-      } else {
-        alert("Upload failed: " + data.message);
-      }
-    } catch (error) {
-      console.error("Upload error:", error);
-      alert("An error occurred. Please try again.");
-    }
-
-    setIsUploading(false);
-  };
+  setIsUploading(false);
+};
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -89,7 +131,7 @@ const SubmitJobModal = ({ onClose, onUpload }: SubmitJobModalProps) => {
               <input type="file" className="hidden" onChange={handleFileChange} />
             </label>
           </div>
-          {file && <p className="text-green-600 mt-2">Selected: {file.name}</p>}
+          {zipFile && <p className="text-green-600 mt-2">Selected: {zipFile.name}</p>}
         </div>
 
         {/* Buttons */}
@@ -97,13 +139,13 @@ const SubmitJobModal = ({ onClose, onUpload }: SubmitJobModalProps) => {
           <button 
             className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-black rounded-md cursor-pointer"
             onClick={() => navigate("/dashboard")}
-            // onClick={onClose}
+            // onClick={handleZipUpload}
           >
             Cancel
           </button>
           <button
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md cursor-pointer"
-            onClick={handleUpload}
+            onClick={handleZipUpload}
             disabled={isUploading}
           >
             {isUploading ? "Uploading..." : "Upload"}

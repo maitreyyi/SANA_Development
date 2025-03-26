@@ -18,10 +18,24 @@ function Dashboard() {
 
   useEffect(() => {
     async function getUserInfo() {
-      const { data: { user }, } = await supabase.auth.getUser();
-      const userName = user?.user_metadata?.name.split(" ");
-      const firstName = userName[0];
-      const lastName = userName[1];
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Handle different name possibilities
+      let firstName = '';
+      let lastName = '';
+      
+      if (user?.user_metadata?.name) {
+        const fullName = user.user_metadata.name;
+        const nameParts = fullName.trim().split(/\s+/);
+        firstName = nameParts[0] || '';
+        // Join all remaining parts as last name or use empty string if none
+        lastName = nameParts.slice(1).join(' ') || '';
+      } else {
+        // Try to get first_name and last_name directly if available
+        firstName = user?.user_metadata?.first_name || '';
+        lastName = user?.user_metadata?.last_name || '';
+      }
+      
       setProfile((prevUser) => ({
         id: user?.id || prevUser?.id || '',
         first_name: firstName || prevUser?.first_name || '',
@@ -31,8 +45,9 @@ function Dashboard() {
         created_at: prevUser?.created_at || new Date().toISOString()
       }));
     }
+    
     getUserInfo();
-  }, [])
+  }, []);
 
   const copyToClipboard = async (text: string) => {
     try {

@@ -59,6 +59,7 @@ const Output = ({ jobId, isFinished }: OutputProps) => {
                 setLogOutput(data.data.execLogFileOutput || 'No execution log output.');
             }
         } catch (err) {
+            console.log("62: ", err);
             setError({
                 message: `Failed to fetch job data: ${(err as Error).message}`,
                 errorLog: `Failed to fetch job data: ${(err as Error).message}`,

@@ -92,13 +92,14 @@ const jobProcess = async (jobId: string): Promise<ProcessJobData> => {
     let optionString = '';
     const { id, jobLocation, extension, network1Name, network2Name, modelVersion } = info.data;
     const { options } = info;
+    // console.log("95: command-line options: ", options)
     // console.log("shape of info", info); //TESTING
 
     validateSanaVersion(modelVersion);
     const sanaLocation = SANA_LOCATIONS[modelVersion];
 
     //EDIT SANA LOCATION HERE IF NEEDED
-    optionString += `cd ${jobLocation} && ${sanaLocation} `;
+    optionString += `cd "${jobLocation}" && "${sanaLocation}" `;
 
     if (extension === '.el') {
         optionString += `-fg1 networks/${network1Name}/${network1Name}.el `;
@@ -118,7 +119,9 @@ const jobProcess = async (jobId: string): Promise<ProcessJobData> => {
 
     if (modelVersion === 'SANA2' && isSana2Options(modelVersion, options)) {
         const esim = options?.advanced?.esim;
-        if (esim && esim.length > 0) {
+        // if (esim && esim.length > 0) { // bug: would always add -esim option even if user didn't specify any
+        if (esim && (esim[0] > 0)) {
+            // console.log("adding -esim options...");
             const numFiles = esim.length;
             // Add external similarity weights (-esim)
             optionString += `-esim ${numFiles} `;
@@ -145,6 +148,7 @@ const jobProcess = async (jobId: string): Promise<ProcessJobData> => {
             // { cwd: jobLocation },
             (error, stdout, stderr) => {
                 if (error) {
+                    // console.log("command-line execution failed: ", error, "standard error: ", stderr);
                     // Execution failed
                     const failedInfo: FailedJobInfoFile = {
                         status: 'failed',

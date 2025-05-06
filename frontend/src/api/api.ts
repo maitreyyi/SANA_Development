@@ -37,8 +37,11 @@ const apiRequest = async <T extends object>(
     });
 
     const data = await response.json();
+    // console.log("response: ", response);
+    // console.log("data: ", data);
     
-    if (!response.ok) {
+    // if (!response.ok)
+    if (response.status != 302 && (response.status < 200 || response.status >= 300)) {
       console.error(`HTTP error! status: ${response.status}`, data);
       
       // Validate error response
@@ -46,6 +49,7 @@ const apiRequest = async <T extends object>(
       if (errorResult.success) {
         throw new ApiError(errorResult.data.message, response.status, errorResult.data);
       } else {
+        // console.log("ERROR");
         throw new ApiError(
           "An unexpected error occurred",
           response.status,

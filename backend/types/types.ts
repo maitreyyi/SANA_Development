@@ -1,7 +1,7 @@
 import { Request } from 'express';
 import { SupabaseClient, User as SupabaseUser } from '@supabase/supabase-js';
 import { SanaModelType, SanaOptions } from '../src/config/modelOptions';
-
+ 
 declare global {
     namespace Express {
         interface Request {
@@ -13,7 +13,19 @@ declare global {
     }
 }
 // request types
-export type MulterFile = Express.Multer.File;
+//export type MulterFile = Parameters<ReturnType<typeof import('multer')>['any']>[0]['files'][0];
+// ✅ Manually defined — works with any Multer config
+export interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  destination: string;
+  filename: string;
+  path: string;
+  buffer?: Buffer;
+}
 
 export interface UploadedFiles {
     files: MulterFile[];

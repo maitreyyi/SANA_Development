@@ -1,101 +1,70 @@
-import { z } from 'zod';
-
-export const SANA_MODEL_NAMES = ['SANA1', 'SANA1_1', 'SANA2'] as const;
-export type SanaModelType = (typeof SANA_MODEL_NAMES)[number];
-export const SANA_MODELS: Set<SanaModelType> = new Set(SANA_MODEL_NAMES);
-
-export function isSanaModelType(value: string): value is SanaModelType {
-    return SANA_MODELS.has(value as SanaModelType);
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CONFIG = exports.modelConfigs = exports.modelOptionsSchemas = exports.validateSanaVersion = exports.SANA_LOCATIONS = exports.SANA_MODELS = exports.SANA_MODEL_NAMES = void 0;
+exports.isSanaModelType = isSanaModelType;
+exports.isSana2Options = isSana2Options;
+const zod_1 = require("zod");
+exports.SANA_MODEL_NAMES = ['SANA1', 'SANA1_1', 'SANA2'];
+exports.SANA_MODELS = new Set(exports.SANA_MODEL_NAMES);
+function isSanaModelType(value) {
+    return exports.SANA_MODELS.has(value);
 }
-
-export function isSana2Options(
-    modelVersion: string,
-    options:any
-): options is Sana2Options {
+function isSana2Options(modelVersion, options) {
     return modelVersion === 'SANA2' && typeof options === "object";
 }
-
-export const SANA_LOCATIONS: Record<SanaModelType, string> = Object.freeze({
-    SANA1: process.env.SANA_LOCATION_1_0 as string,
-    SANA1_1: process.env.SANA_LOCATION_1_1 as string,
-    SANA2: process.env.SANA_LOCATION_2_0 as string,
+exports.SANA_LOCATIONS = Object.freeze({
+    SANA1: process.env.SANA_LOCATION_1_0,
+    SANA1_1: process.env.SANA_LOCATION_1_1,
+    SANA2: process.env.SANA_LOCATION_2_0,
 });
-
-Object.entries(SANA_LOCATIONS).forEach(([model, location]) => {
+Object.entries(exports.SANA_LOCATIONS).forEach(([model, location]) => {
     if (typeof location === 'undefined') {
         throw new Error(`SANA location for ${model} is not defined`);
     }
 });
-
-export const validateSanaVersion = (modelVersion: string): boolean => {
-    if (!SANA_MODELS.has(modelVersion as SanaModelType)) {
-        throw new Error(
-            `Invalid SANA version: ${modelVersion}. Must be one of: ${SANA_MODEL_NAMES.join(', ')}`,
-        );
+const validateSanaVersion = (modelVersion) => {
+    if (!exports.SANA_MODELS.has(modelVersion)) {
+        throw new Error(`Invalid SANA version: ${modelVersion}. Must be one of: ${exports.SANA_MODEL_NAMES.join(', ')}`);
     }
     return true;
 };
-
-const sana1OptionsSchema = z.object({
+exports.validateSanaVersion = validateSanaVersion;
+const sana1OptionsSchema = zod_1.z.object({
     // model: z.literal('SANA1'),
-    standard: z.object({
-        t: z.number().min(1).max(60),
-        s3: z.number(),
-        ec: z.number(),
+    standard: zod_1.z.object({
+        t: zod_1.z.number().min(1).max(60),
+        s3: zod_1.z.number(),
+        ec: zod_1.z.number(),
     }),
     // advanced: z.object({}),
 });
-
-const sana1_1OptionsSchema = z.object({
+const sana1_1OptionsSchema = zod_1.z.object({
     // model: z.literal('SANA1_1'),
-    standard: z.object({
-        s3: z.number(),
-        ec: z.number(),
-        t: z.number().min(1).max(60),
+    standard: zod_1.z.object({
+        s3: zod_1.z.number(),
+        ec: zod_1.z.number(),
+        t: zod_1.z.number().min(1).max(60),
     }),
     // advanced: z.object({}),
 });
-
-const sana2OptionsSchema = z.object({
+const sana2OptionsSchema = zod_1.z.object({
     // model: z.literal('SANA2'),
-    standard: z.object({
-        s3: z.number().optional(),
-        ec: z.number().optional(),
-        ics: z.number().optional(),
-        tolerance: z.number().optional(),
+    standard: zod_1.z.object({
+        s3: zod_1.z.number().optional(),
+        ec: zod_1.z.number().optional(),
+        ics: zod_1.z.number().optional(),
+        tolerance: zod_1.z.number().optional(),
     }),
-    advanced: z.object({
-        esim: z.array(z.number()).optional(),
+    advanced: zod_1.z.object({
+        esim: zod_1.z.array(zod_1.z.number()).optional(),
     }),
 });
-
-// Infer types from schemas
-export type Sana1Options = z.infer<typeof sana1OptionsSchema>;
-export type Sana1_1Options = z.infer<typeof sana1_1OptionsSchema>;
-export type Sana2Options = z.infer<typeof sana2OptionsSchema>;
-
-export const modelOptionsSchemas = {
+exports.modelOptionsSchemas = {
     SANA1: sana1OptionsSchema,
     SANA1_1: sana1_1OptionsSchema,
     SANA2: sana2OptionsSchema,
-} as const;
-
-export type SanaOptions = Sana1Options | Sana1_1Options | Sana2Options;
-
-// Define types for configuration options
-type OptionType = 'text' | 'double' | 'dbl_vec' | 'str_vec';
-type OptionValue = number | string | number[] | string[];
-type OptionConfig = [string, OptionType, OptionValue, string, string];
-
-interface ModelConfig {
-    version: string;
-    options: {
-        standard: OptionConfig[];
-        advanced: OptionConfig[];
-    };
-}
-
-export const modelConfigs: Record<SanaModelType, ModelConfig> = {
+};
+exports.modelConfigs = {
     SANA1: {
         version: '1.0',
         options: {
@@ -206,15 +175,9 @@ export const modelConfigs: Record<SanaModelType, ModelConfig> = {
         },
     },
 };
-
-interface ConfigType {
-    MAX_ATTEMPTS: number;
-    PREPROCESSED_DIR: string;
-    CLEANUP_ON_COMPLETE: boolean;
-}
-
-export const CONFIG: Readonly<ConfigType> = Object.freeze({
+exports.CONFIG = Object.freeze({
     MAX_ATTEMPTS: 3,
     PREPROCESSED_DIR: './preprocessed',
     CLEANUP_ON_COMPLETE: process.env.CLEANUP_ON_COMPLETE === 'true',
 });
+//# sourceMappingURL=modelOptions.js.map

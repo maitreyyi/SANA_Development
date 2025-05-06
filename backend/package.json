@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "build:": "tsc",
+    "build": "tsc",
     "pre:build": "cd .. && npm run build && cd backend",
     "start": "node server.js",
     "dev": "tsx src/index.ts",

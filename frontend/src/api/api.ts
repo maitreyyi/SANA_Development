@@ -10,7 +10,7 @@ import {
   } from './apiValidation';
 
 //export const API_URL = import.meta.env.VITE_API_URL; // ?? 'http://localhost:4000';
-export const API_URL = "http://hayeslab.ics.uci.edu/backend/api";
+export const API_URL = "https://hayeslab.ics.uci.edu/backend/api";
 
 /**
  * Generic API request function with improved error handling and type validation
@@ -21,7 +21,6 @@ const apiRequest = async <T extends object>(
   options: ApiOptions = {},
   hasMultipart: boolean = false
 ): Promise<T> => {
-  //const url = `${API_URL}/api${endpoint}`;
   const url = `${API_URL}${endpoint}`;
 	console.log("making api call to: ", url);
   
@@ -156,7 +155,7 @@ const api: Api = {
   },
 
   downloadJobZip: async (jobId) => {
-    const url = `${API_URL}/api/jobs/${jobId}/zip`;
+    const url = `${API_URL}/jobs/${jobId}/zip`;
     const response = await fetch(url);
     
     if (!response.ok) {

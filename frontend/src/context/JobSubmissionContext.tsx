@@ -708,13 +708,13 @@ export function JobSubmissionProvider({
                 }
             }
         } catch (error) {
-            console.error("Submit preparation error:", error);
+            // console.error("Submit preparation error:", error);
             setFileError(
                 error instanceof Error
                     ? [error.message]
                     : ["An unexpected error occurred"]
             );
-            // console.error("Submit preparation error:", error);
+            console.error("Submit preparation error:", error);
         }
     };
 

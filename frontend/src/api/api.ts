@@ -9,7 +9,8 @@ import {
     GetJobResultSuccessResponseSchema, // Use this one for success cases
   } from './apiValidation';
 
-export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
+//export const API_URL = import.meta.env.VITE_API_URL; // ?? 'http://localhost:4000';
+export const API_URL = "http://hayeslab.ics.uci.edu/backend/api";
 
 /**
  * Generic API request function with improved error handling and type validation
@@ -20,7 +21,9 @@ const apiRequest = async <T extends object>(
   options: ApiOptions = {},
   hasMultipart: boolean = false
 ): Promise<T> => {
-  const url = `${API_URL}/api${endpoint}`;
+  //const url = `${API_URL}/api${endpoint}`;
+  const url = `${API_URL}${endpoint}`;
+	console.log("making api call to: ", url);
   
   const headers = {
     ...options.headers,

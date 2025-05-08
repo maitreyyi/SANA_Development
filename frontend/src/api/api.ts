@@ -20,7 +20,8 @@ const apiRequest = async <T extends object>(
   options: ApiOptions = {},
   hasMultipart: boolean = false
 ): Promise<T> => {
-  const url = `${API_URL}/api${endpoint}`;
+  const url = `${API_URL}${endpoint}`;
+  // const url1 = `${API_URL}${endpoint}`; // API_URL ends with /api. 
   
   const headers = {
     ...options.headers,
@@ -153,7 +154,7 @@ const api: Api = {
   },
 
   downloadJobZip: async (jobId) => {
-    const url = `${API_URL}/api/jobs/${jobId}/zip`;
+    const url = `${API_URL}/jobs/${jobId}/zip`;
     const response = await fetch(url);
     
     if (!response.ok) {

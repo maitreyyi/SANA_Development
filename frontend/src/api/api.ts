@@ -11,7 +11,7 @@ import {
 
 //export const API_URL = import.meta.env.VITE_API_URL; // ?? 'http://localhost:4000';
 export const API_URL = "https://hayeslab.ics.uci.edu/backend/api";
-
+console.log("API_URL is: ", API_URL);
 /**
  * Generic API request function with improved error handling and type validation
  */
@@ -22,7 +22,7 @@ const apiRequest = async <T extends object>(
   hasMultipart: boolean = false
 ): Promise<T> => {
   const url = `${API_URL}${endpoint}`;
-	console.log("making api call to: ", url);
+	console.log("making api call to the backend route: ", url);
   
   const headers = {
     ...options.headers,

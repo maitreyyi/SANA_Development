@@ -125,7 +125,8 @@ export const FailedJobResponseSchema = z.object({
 
 
 export const LookupJobSuccessSchema = z.object({
-    status: z.enum(['preprocessed', 'processing', 'processed', 'failed']),
+    // status: z.enum(['preprocessed', 'processing', 'processed', 'failed']),
+    status: z.enum(['success', 'redirect', 'error']),
     zip_name: z.string().optional(),
     error_log: z.string().optional(),
     exec_log: z.string().optional()

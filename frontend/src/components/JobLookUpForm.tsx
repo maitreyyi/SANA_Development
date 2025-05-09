@@ -7,8 +7,7 @@ import {
   labelClasses,
 } from "../utils/tailwindClasses";
 import { ErrorResponse, isLookupJobResponse, LookupJobSuccessResponse } from "../api/apiValidation";
-
-const API_ENDPOINT = "https://sana.ics.uci.edu/";
+import { API_URL } from '../api/api.ts';
 
 function JobLookUpForm() {
   const [jobID, setJobID] = useState("");
@@ -24,12 +23,16 @@ function JobLookUpForm() {
     setJobData(null);
 
     try {
-      const response = await fetch(`${API_ENDPOINT}/get-job?id=${jobID}`);
+      const url = `${API_URL}/jobs/${jobID}`;
+      console.log("url is: ", url);
+      const response = await fetch(url);
+      console.log("response is: ", response);
       if (!response.ok) {
         throw new Error("Job not found");
       }
 
       const data = await response.json();
+      console.log("data is: ", data);
       setJobData(data); // Save job data in state
     } catch (err) {
       setError({
@@ -49,7 +52,8 @@ function JobLookUpForm() {
     const { status, zip_name, error_log, exec_log } = jobData;
     
 
-    if (status === "preprocessed" || status === "processing") {
+    // if (status === "preprocessed" || status === "processing") {
+    if (status === "redirect") {
       return (
         <div>
           <p>The job is still being processed. Please wait...</p>
@@ -57,19 +61,18 @@ function JobLookUpForm() {
       );
     }
 
-    if (status === "processed") {
+    if (status === "success") {
       return (
         <div>
           <div className="panel callout">
-            <h2>NOTE</h2>
+            <h2>Job Successfully Processed!</h2>
             <span>
-              These results can be accessed on the{" "}
-              <a href={`/results?id=${jobID}`}>results page</a> or directly{" "}
-              <a href={`${API_ENDPOINT}/results?id=${jobID}`}>this link</a>.
+              These results JSON Data can be accessed {" "}
+              <a href={`${API_URL}/jobs/${jobID}`}>here</a>.
             </span>
           </div>
           <a
-            href={`${API_ENDPOINT}/process/${jobID}/${zip_name}`}
+            href={`${API_URL}/jobs/${jobID}/zip`}
             className={`${buttonClasses}`}
           >
             Download Results As .zip
@@ -83,7 +86,7 @@ function JobLookUpForm() {
       );
     }
 
-    if (status === "failed") {
+    if (status === "error") {
       return (
         <div>
           <p>The job failed. The error log is:</p>

@@ -9,8 +9,8 @@ import {
     GetJobResultSuccessResponseSchema, // Use this one for success cases
   } from './apiValidation';
 
-//export const API_URL = import.meta.env.VITE_API_URL; // ?? 'http://localhost:4000';
-export const API_URL = "https://hayeslab.ics.uci.edu/backend/api";
+export const API_URL = import.meta.env.VITE_API_URL; // ?? 'http://localhost:4000';
+// export const API_URL = "https://hayeslab.ics.uci.edu/backend/api";
 console.log("API_URL is: ", API_URL);
 /**
  * Generic API request function with improved error handling and type validation

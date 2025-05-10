@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import HttpError from '../middlewares/HttpError';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import Archiver from "archiver";
 import { SANA_MODELS, SANA_LOCATIONS, validateSanaVersion, isSana2Options } from '../config/modelOptions';
 import { FailedJobInfoFile, JobInfoFile, ProcessJobData, SuccessJobInfoFile, UnifiedResponse } from '../../types/types';
@@ -143,89 +143,116 @@ const jobProcess = async (jobId: string): Promise<ProcessJobData> => {
 
     // Step 5: Run the script
     return new Promise<ProcessJobData>((resolve, reject) => {
-        exec(
-            `${optionString} &> run.log`,
-            // { cwd: jobLocation },
-            (error, stdout, stderr) => {
-                if (error) {
-                    // console.log("command-line execution failed: ", error, "standard error: ", stderr);
-                    // Execution failed
-                    const failedInfo: FailedJobInfoFile = {
-                        status: 'failed',
-                        log: path.join(jobLocation, 'error.log'),
+        console.log('Current working directory:', process.cwd());
+        console.log('Job location:', jobLocation);
+        
+        // Open the log file and get its descriptor
+        const logFile = fs.openSync(path.join(jobLocation, 'run.log'), 'a');
+        
+        // Use file descriptors for stdout and stderr
+        const child = spawn('sh', ['-c', optionString], { 
+            cwd: jobLocation,
+            stdio: ['ignore', logFile, logFile]  // Use file descriptor for both stdout and stderr
+        });
+        
+        child.on('error', (error) => {
+            console.error('Failed to start command:', error);
+            fs.closeSync(logFile);  // Close the file descriptor
+            reject(error);
+        });
+        
+        child.on('close', (code) => {
+            fs.closeSync(logFile);  // close the file descriptor
+            if (code !== 0) { // SANA failed during execution 
+                const failedInfo: FailedJobInfoFile = {
+                    status: 'failed',
+                    log: path.join(jobLocation, 'error.log'),
+                    command: optionString,
+                };
+                fs.writeFileSync(infoFilePath, JSON.stringify(failedInfo));
+                
+                // check if run.log exists
+                const runLogPath = path.join(jobLocation, 'run.log');
+                console.log('Does run.log exist after error?', fs.existsSync(runLogPath));
+                if (fs.existsSync(runLogPath)) {
+                    console.log('run.log contents:', fs.readFileSync(runLogPath, 'utf8'));
+                }
+                
+                resolve({
+                    jobId,
+                    success: false,
+                    status: 'Networks could not be aligned.',
+                    redirect: `/lookup-job/${jobId}`,
+                });
+            } else { // SANA executed successfully
+                // check if run.log exists
+                const runLogPath = path.join(jobLocation, 'run.log');
+                console.log('Does run.log exist after success?', fs.existsSync(runLogPath));
+                if (fs.existsSync(runLogPath)) {
+                    console.log('run.log contents:', fs.readFileSync(runLogPath, 'utf8'));
+                }
+                
+                // Step 6: Create a zip for the files
+                const zipName = `SANA_alignment_output_${id}.zip`;
+                const zipPath = path.join(jobLocation, zipName); // process/{jobId}/SANA_alignment_output_{id}.zip
+                const output = fs.createWriteStream(zipPath); // writeable stream where compressed data is written to the Zip file
+                const archive = Archiver('zip',{ zlib: { level: 9 } });
+
+                archive.on('entry', function (entry) {
+                    console.log('Adding to zip:', entry.name);
+                });
+
+                output.on('pipe', () => {
+                    console.log('Pipe started');
+                });
+
+                archive.on('warning', function (err) {
+                    console.warn('Warning during zip creation:', err);
+                    if (err.code === 'ENOENT') {
+                        console.warn('File not found while zipping');
+                    } else {
+                        reject(err);
+                    }
+                });
+
+                archive.on('error', (err) => {
+                    console.error('Error during zip creation:', err);
+                    reject(err);
+                });
+
+                output.on('close', () => {
+                    console.log(`Zip file created at ${zipPath}`);
+                    console.log(`Zip file size: ${archive.pointer()} bytes`);
+                    if (!fs.existsSync(zipPath)) {
+                        console.error('Zip file was not created!');
+                        reject(new Error('Zip file creation failed'));
+                        return;
+                    }
+                    // Step 7: Update info.json with status 'processed'
+                    const successInfo: SuccessJobInfoFile = {
+                        status: 'processed',
+                        zipName: zipName,
                         command: optionString,
                     };
-                    fs.writeFileSync(infoFilePath, JSON.stringify(failedInfo));
+                    fs.writeFileSync(infoFilePath, JSON.stringify(successInfo));
                     resolve({
                         jobId,
-                        success: false,
-                        status: 'Networks could not be aligned.',
+                        success: true,
+                        status: 'Networks successfully processed.',
                         redirect: `/lookup-job/${jobId}`,
                     });
-                } else {
-                    // Execution succeeded
-                    // Step 6: Create a zip for the files
-                    const zipName = `SANA_alignment_output_${id}.zip`;
-                    const zipPath = path.join(jobLocation, zipName);
-                    const output = fs.createWriteStream(zipPath);
-                    const archive = Archiver('zip',{ zlib: { level: 9 } });
+                });
 
-                    archive.on('entry', function (entry) {
-                        console.log('Adding to zip:', entry.name);
-                    });
-
-                    output.on('pipe', () => {
-                        console.log('Pipe started');
-                    });
-
-                    archive.on('warning', function (err) {
-                        console.warn('Warning during zip creation:', err);
-                        if (err.code === 'ENOENT') {
-                            console.warn('File not found while zipping');
-                        } else {
-                            reject(err);
-                        }
-                    });
-
-                    archive.on('error', (err) => {
-                        console.error('Error during zip creation:', err);
-                        reject(err);
-                    });
-
-                    output.on('close', () => {
-                        console.log(`Zip file created at ${zipPath}`);
-                        console.log(`Zip file size: ${archive.pointer()} bytes`);
-                        if (!fs.existsSync(zipPath)) {
-                            console.error('Zip file was not created!');
-                            reject(new Error('Zip file creation failed'));
-                            return;
-                        }
-                        // Step 7: Update info.json with status 'processed'
-                        const successInfo: SuccessJobInfoFile = {
-                            status: 'processed',
-                            zipName: zipName,
-                            command: optionString,
-                        };
-                        fs.writeFileSync(infoFilePath, JSON.stringify(successInfo));
-                        resolve({
-                            jobId,
-                            success: true,
-                            status: 'Networks successfully processed.',
-                            redirect: `/lookup-job/${jobId}`,
-                        });
-                    });
-
-                    archive.pipe(output);
-                    // archive.directory(jobLocation, false);
-                    archive.glob('**/*', {
-                        cwd: jobLocation,
-                        ignore: [zipName],
-                        dot: true,
-                    });
-                    archive.finalize();
-                }
-            },
-        );
+                archive.pipe(output); // sends compressed data from archive and sends to output file stream
+                // archive.directory(jobLocation, false);
+                archive.glob('**/*', { // adds all files in the jobLocation directory to the zip file (writeable stream)
+                    cwd: jobLocation,
+                    ignore: [zipName],
+                    dot: true,
+                });
+                archive.finalize();
+            }
+        });
     });
 };
 

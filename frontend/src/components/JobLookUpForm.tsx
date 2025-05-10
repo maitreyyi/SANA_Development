@@ -49,7 +49,7 @@ function JobLookUpForm() {
   const renderJobDetails = () => {
     if (!jobData || !isLookupJobResponse(jobData)) return null;
 
-    const { status, zip_name, error_log, exec_log } = jobData;
+    const { status, error_log, exec_log } = jobData;
     
 
     // if (status === "preprocessed" || status === "processing") {

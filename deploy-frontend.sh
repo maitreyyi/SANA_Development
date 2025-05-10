@@ -1,6 +1,6 @@
 #! /bin/bash
 
-directory="~/app/frontend"
+directory="$HOME/app/frontend"
 cd $directory
 exec npm run build
 sudo cp -r dist/* /var/www/hayeslab/
